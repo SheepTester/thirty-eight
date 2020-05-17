@@ -1,0 +1,16 @@
+{
+  "name": "thirty-eight",
+  "version": "1.0.0",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SheepTester/thirty-eight.git"
+  },
+  "author": "SheepTester",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SheepTester/thirty-eight/issues"
+  },
+  "homepage": "https://github.com/SheepTester/thirty-eight#readme"
+}
