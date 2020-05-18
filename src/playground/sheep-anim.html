@@ -9,6 +9,7 @@
     <script src="/sheep3.js" charset="utf-8"></script>
     <style media="screen">
       @import url('../css/basic.css');
+      @import url('../css/canvas.css');
     </style>
   </head>
   <body>
@@ -18,25 +19,28 @@ import { SpritesheetAnimation } from '../lib/spritesheet-animation.js'
 import { Resizer } from '../lib/resizer.js'
 import { Animator } from '../lib/animator.js'
 
-const canvas = new CanvasWrapper(document.body)
+const canvas = new CanvasWrapper().addTo(document.body)
 
-const resizer = new Resizer(canvas).listen()
+const resizer = new Resizer([canvas]).listen()
 
 Promise.all([
   loadImage('../assets/sheep2.png'),
   loadImage('../assets/sheep3.png'),
-  resizer.ready
+  resizer.resize()
 ]).then(([sheep2, sheep3]) => {
   const sheep2Anim = new SpritesheetAnimation({ image: sheep2, frames: 2 })
   const sheep3Anim = new SpritesheetAnimation({ image: sheep3, frames: 3 })
 
-  const animator = new Animator(elapsedTime => {
-    sheep2Anim.simulate(elapsedTime)
-    sheep2Anim.draw({ canvas, x: 0, y: 0 })
+  const animator = new Animator(() => {
+    canvas.context.clearRect(0, 0, canvas.width, canvas.height)
+    canvas.context.imageSmoothingEnabled = false
 
-    sheep3Anim.simulate(elapsedTime)
-    sheep3Anim.draw({ canvas, x: 100, y: 0 })
-  })
+    // sheep2Anim.simulate(elapsedTime)
+    sheep2Anim.draw({ canvas, x: 0, y: 0, width: sheep2.width * 2, height: sheep2.height * 2 })
+
+    // sheep3Anim.simulate(elapsedTime)
+    sheep3Anim.draw({ canvas, x: 100, y: 0, width: sheep3.width * 2, height: sheep3.height * 2 })
+  }).start()
 })
     </script>
   </body>
