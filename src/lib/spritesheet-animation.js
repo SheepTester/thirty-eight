@@ -12,6 +12,10 @@ export class SpritesheetAnimation {
     this.fps = fps
   }
 
+  simulate (_, totalTime) {
+    this._frame = Math.floor(totalTime * this.fps % this._frames) 
+  }
+
   draw ({ canvas: { context }, x = 0, y = 0, width = this.width, height = this.height }) {
     context.drawImage(
       this.image,
