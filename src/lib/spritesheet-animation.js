@@ -1,17 +1,18 @@
 export class SpritesheetAnimation {
   constructor ({
     image,
-    frames = 1
+    frames = 1,
+    fps = 30
   } = {}) {
     this.image = image
     this.width = image.width
     this.height = image.height / frames
     this._frame = 0
     this._frames = frames
+    this.fps = fps
   }
 
   draw ({ canvas: { context }, x = 0, y = 0, width = this.width, height = this.height }) {
-    this._frame = Math.random() * this._frames | 0
     context.drawImage(
       this.image,
       0,

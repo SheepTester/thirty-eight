@@ -28,18 +28,18 @@ Promise.all([
   loadImage('../assets/sheep3.png'),
   resizer.resize()
 ]).then(([sheep2, sheep3]) => {
-  const sheep2Anim = new SpritesheetAnimation({ image: sheep2, frames: 2 })
-  const sheep3Anim = new SpritesheetAnimation({ image: sheep3, frames: 3 })
+  const sheep2Anim = new SpritesheetAnimation({ image: sheep2, frames: 2, fps: 6 })
+  const sheep3Anim = new SpritesheetAnimation({ image: sheep3, frames: 3, fps: 6 })
 
   const animator = new Animator(() => {
     canvas.context.clearRect(0, 0, canvas.width, canvas.height)
     canvas.context.imageSmoothingEnabled = false
 
     // sheep2Anim.simulate(elapsedTime)
-    sheep2Anim.draw({ canvas, x: 0, y: 0, width: sheep2.width * 2, height: sheep2.height * 2 })
+    sheep2Anim.draw({ canvas, x: 0, y: 0, width: sheep2Anim.width * 2, height: sheep2Anim.height * 2 })
 
     // sheep3Anim.simulate(elapsedTime)
-    sheep3Anim.draw({ canvas, x: 100, y: 0, width: sheep3.width * 2, height: sheep3.height * 2 })
+    sheep3Anim.draw({ canvas, x: 150, y: 0, width: sheep3Anim.width * 2, height: sheep3Anim.height * 2 })
   }).start()
 })
     </script>

@@ -13,6 +13,7 @@ export class Animator {
 
   start () {
     if (!this.animating) {
+      this.animating = true
       this._frame()
     }
     return this
@@ -27,6 +28,7 @@ export class Animator {
 
   stop () {
     if (this.animating) {
+      this.animating = false
       window.cancelAnimationFrame(this._lastRequest)
       this._lastRequest = null
     }
