@@ -81,7 +81,7 @@ async function main () {
         if (!wasPressingEnter) {
           dialogue.speak(dialogueSrc.sample)
           dialogue.addTo(document.body)
-          dialogue.measureSections()
+          dialogue.resize()
           wasPressingEnter = true
         }
       } else if (wasPressingEnter) {

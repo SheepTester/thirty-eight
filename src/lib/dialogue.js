@@ -28,13 +28,31 @@ export class Dialogue extends Element {
     dialogueTextWrapper.className = 'dialogue-text-wrapper'
     dialogueTextWrapper.appendChild(dialogueText)
 
+    const dialogueHintUp = document.createElement('span')
+    dialogueHintUp.className = 'dialogue-hint dialogue-hint-up'
+    dialogueHintUp.textContent = 'Press UP ARROW to scroll up.'
+
+    const dialogueHintDown = document.createElement('span')
+    dialogueHintDown.className = 'dialogue-hint dialogue-hint-down'
+    dialogueHintDown.textContent = 'Press ENTER to continue.'
+
+    const dialogueHintWrapper = document.createElement('div')
+    dialogueHintWrapper.className = 'dialogue-hint-wrapper sans-nouveaux'
+    dialogueHintWrapper.appendChild(dialogueHintUp)
+    dialogueHintWrapper.appendChild(dialogueHintDown)
+
+    const dialogueRightSide = document.createElement('div')
+    dialogueRightSide.className = 'dialogue-right-side'
+    dialogueRightSide.appendChild(dialogueTextWrapper)
+    dialogueRightSide.appendChild(dialogueHintWrapper)
+
     const dialogueBody = document.createElement('div')
     dialogueBody.className = 'dialogue-body'
     dialogueBody.appendChild(speakerImage)
-    dialogueBody.appendChild(dialogueTextWrapper)
+    dialogueBody.appendChild(dialogueRightSide)
 
     const wrapper = document.createElement('div')
-    wrapper.className = 'dialogue'
+    wrapper.className = 'dialogue dialogue-can-go-down'
     wrapper.appendChild(speakerName)
     wrapper.appendChild(dialogueBody)
 
@@ -72,8 +90,9 @@ export class Dialogue extends Element {
     return this
   }
 
-  resize () {
+  async resize (then = Promise.resolve()) {
     if (this.speaking) this.measureSections()
+    await then
     return this
   }
 
@@ -83,7 +102,13 @@ export class Dialogue extends Element {
       throw new Error('Too far down!')
     }
     this.section = section
-    this._elems.dialogueText.style.top = -section * PORTION_HEIGHT + 'px'
+    const { dialogueText, wrapper } = this._elems
+    dialogueText.style.top = -section * PORTION_HEIGHT + 'px'
+    if (section > 0) {
+      wrapper.classList.add('dialogue-can-go-up')
+    } else {
+      wrapper.classList.remove('dialogue-can-go-up')
+    }
     return this
   }
 
