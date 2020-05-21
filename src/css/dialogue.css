@@ -10,6 +10,7 @@
   right: 0;
   margin: 50px auto;
   max-width: 800px;
+  user-select: none;
 }
 .speaker-name {
   margin: 0;

@@ -72,24 +72,33 @@ import { SpritesheetAnimation } from '../lib/spritesheet-animation.js'
 import { Resizer } from '../lib/resizer.js'
 import { Animator } from '../lib/animator.js'
 import { Simulator } from '../lib/simulator.js'
-import { Walkway } from '../lib/walkway.js'
+import { tile } from '../lib/tiler.js'
 import { Keys } from '../lib/keys.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
 const FRAMES_PER_WALK_CYCLE = 6
 
+const BACKGROUND_PARALLAX = 0.5
+
 async function main () {
   const canvas = new CanvasWrapper().addTo(document.body)
   const resizer = new Resizer([canvas]).listen()
   const { keys } = new Keys().listen()
-  const [sheepStillImage, sheepWalkImage, walkwayImage] = await Promise.all([
+  const [
+    sheepStillImage,
+    sheepWalkImage,
+    walkway,
+    warehouseWall,
+    warehouseWallFront
+  ] = await Promise.all([
     loadImage('../assets/sheep3.png'),
     loadImage('../assets/sheep-walk.png'),
     loadImage('../assets/metal-walkway.png'),
+    loadImage('../assets/warehouse-wall.png'),
+    loadImage('../assets/warehouse-wall-darker.png'),
     resizer.resize()
   ])
-  const walkway = new Walkway({ image: walkwayImage })
   const sheepStill = new SpritesheetAnimation({ image: sheepStillImage, fps: FPS, frames: 3 })
   const sheepWalk = new SpritesheetAnimation({ image: sheepWalkImage, fps: FPS, frames: 8 })
   const minX = -300
@@ -126,7 +135,7 @@ async function main () {
     } else if (walking) {
       walking = false
     }
-    cameraX += (x * scale - cameraX) * 1e-40 ** elapsedTime
+    cameraX += (x * scale - cameraX) * 1e-60 ** elapsedTime
   }
   const simulator = new Simulator({ simulations: [{ simulate }, sheepStill] })
   const animator = new Animator(() => {
@@ -134,7 +143,26 @@ async function main () {
     canvas.context.clearRect(0, 0, canvas.width, canvas.height)
     canvas.context.imageSmoothingEnabled = false
 
+    const floorY = canvas.height / 2
     const shiftX = canvas.width / 2 - cameraX
+    tile({
+      image: warehouseWall,
+      canvas,
+      startX: (minX - sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
+      endX: (maxX + sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
+      startY: 0,
+      endY: canvas.height,
+      scale: scale * 2
+    })
+    tile({
+      image: warehouseWallFront,
+      canvas,
+      startX: (minX - sheepStill.width / 2) * scale - Math.ceil(canvas.width / (warehouseWallFront.width * scale * 3)) * warehouseWallFront.width * scale * 3 + shiftX,
+      endX: (minX - sheepStill.width / 2) * scale + shiftX,
+      startY: 0,
+      endY: canvas.height,
+      scale: scale * 3
+    })
     if (walking) {
       if (direction === 'left') {
         canvas.context.save()
@@ -142,7 +170,7 @@ async function main () {
         sheepWalk.draw({
           canvas,
           x: -(visualX + sheepStill.width / 2) * scale - shiftX,
-          y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
+          y: floorY - sheepWalk.height * scale,
           width: sheepWalk.width * scale,
           height: sheepWalk.height * scale
         })
@@ -151,7 +179,7 @@ async function main () {
         sheepWalk.draw({
           canvas,
           x: (visualX - sheepStill.width / 2) * scale + shiftX,
-          y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
+          y: floorY - sheepWalk.height * scale,
           width: sheepWalk.width * scale,
           height: sheepWalk.height * scale
         })
@@ -163,7 +191,7 @@ async function main () {
         sheepStill.draw({
           canvas,
           x: -(x + sheepStill.width / 2) * scale - shiftX,
-          y: canvas.height / 2 + (walkwayImage.height - sheepStill.height) * scale,
+          y: floorY - sheepStill.height * scale,
           width: sheepStill.width * scale,
           height: sheepStill.height * scale
         })
@@ -172,18 +200,19 @@ async function main () {
         sheepStill.draw({
           canvas,
           x: (x - sheepStill.width / 2) * scale + shiftX,
-          y: canvas.height / 2 + (walkwayImage.height - sheepStill.height) * scale,
+          y: floorY - sheepStill.height * scale,
           width: sheepStill.width * scale,
           height: sheepStill.height * scale
         })
       }
     }
-    walkway.draw({
+    tile({
+      image: walkway,
       canvas,
-      start: (minX - sheepStill.width / 2) * scale + shiftX,
-      end: (maxX + sheepStill.width / 2) * scale + shiftX,
-      y: canvas.height / 2,
-      height: walkwayImage.height * scale
+      startX: (minX - sheepStill.width / 2) * scale + shiftX,
+      endX: (maxX + sheepStill.width / 2) * scale + shiftX,
+      startY: floorY - walkway.height * scale,
+      scale
     })
   }).start()
 }

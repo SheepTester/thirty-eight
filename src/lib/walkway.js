@@ -1,5 +1,6 @@
 import { mod } from './math.js'
 
+// Use Tiler instead
 export class Walkway {
   constructor ({ image } = {}) {
     this.image = image
