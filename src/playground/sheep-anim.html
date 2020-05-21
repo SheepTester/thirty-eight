@@ -32,21 +32,64 @@ const resizer = new Resizer([canvas]).listen()
 Promise.all([
   loadImage('../assets/sheep2.png'),
   loadImage('../assets/sheep3.png'),
+  loadImage('../assets/sheep-walk.png'),
   resizer.resize()
-]).then(([sheep2, sheep3]) => {
+]).then(([sheep2, sheep3, sheepWalk]) => {
   const sheep2Anim = new SpritesheetAnimation({ image: sheep2, frames: 2, fps: 6 })
   const sheep3Anim = new SpritesheetAnimation({ image: sheep3, frames: 3, fps: 6 })
 
-  const simulator = new Simulator({ simulations: [sheep2Anim, sheep3Anim] })
+  // Pauses
+  const walkingSheep1 = new SpritesheetAnimation({
+    image: sheepWalk,
+    frames: 8,
+    fps: 6,
+    getFrame (totalFrames) {
+      const step = totalFrames % 10
+      if (step < 3) return 0
+      else return step - 3
+    }
+  })
+
+  // Continuous
+  const walkingSheep2 = new SpritesheetAnimation({
+    image: sheepWalk,
+    frames: 8,
+    fps: 6,
+    getFrame (totalFrames) {
+      return totalFrames % 6 + 1
+    }
+  })
+
+  let x1 = 100
+  let x2 = 100
+  const simulator = new Simulator({ simulations: [
+    sheep2Anim,
+    sheep3Anim,
+    walkingSheep1,
+    walkingSheep2,
+    {
+      simulate (_, time) {
+        // 6 - fps
+        // 10, 6 - frames in cycle
+        // 18 - pixel jump per cycle
+        // 2 - visual scale factor
+        x1 = -time * 20 + Math.floor(time * 6 / 10) * 18 * 2
+        x2 = -time * 35 + Math.floor(time * 6 / 6) * 18 * 2
+      }
+    }
+  ] })
 
   const animator = new Animator(() => {
     simulator.simulate()
 
     canvas.context.clearRect(0, 0, canvas.width, canvas.height)
+    // canvas.context.globalAlpha = 0.05
     canvas.context.imageSmoothingEnabled = false
 
     sheep2Anim.draw({ canvas, x: 0, y: 0, width: sheep2Anim.width * 2, height: sheep2Anim.height * 2 })
     sheep3Anim.draw({ canvas, x: 150, y: 0, width: sheep3Anim.width * 2, height: sheep3Anim.height * 2 })
+    walkingSheep1.draw({ canvas, x: x1, y: 100, width: walkingSheep1.width * 2, height: walkingSheep1.height * 2 })
+    walkingSheep2.draw({ canvas, x: x2, y: 200, width: walkingSheep2.width * 2, height: walkingSheep2.height * 2 })
   }).start()
 })
     </script>
