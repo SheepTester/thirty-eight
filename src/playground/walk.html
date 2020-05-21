@@ -27,12 +27,16 @@ import { Simulator } from '../lib/simulator.js'
 import { tile } from '../lib/tiler.js'
 import { Keys } from '../lib/keys.js'
 import { Dialogue } from '../lib/dialogue.js'
+import * as Box from '../lib/box.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
 const FRAMES_PER_WALK_CYCLE = 6
 
 const BACKGROUND_PARALLAX = 0.5
+
+const params = new URL(window.location).searchParams
+const showBoxes = params.get('show-boxes')
 
 async function main () {
   const sheepSpeaker = { image: '../assets/happy.png', name: '19811764' }
@@ -58,11 +62,23 @@ async function main () {
     fetch('../dialogue/test.json').then(r => r.json()),
     resizer.resize()
   ])
+
   const sheepStill = new SpritesheetAnimation({ image: sheepStillImage, fps: FPS, frames: 3 })
   const sheepWalk = new SpritesheetAnimation({ image: sheepWalkImage, fps: FPS, frames: 8 })
 
   const minX = -300
   const maxX = 300
+
+  const sheepBox = Box.fromDimensions({
+    x: -sheepStill.width / 2,
+    y: 0,
+    width: sheepStill.width,
+    height: -sheepStill.height
+  })
+  const interactables = [
+    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor })
+  ]
+
   const scale = 3
   const speed = 40 // px/s
   let cameraX = 0
@@ -208,6 +224,15 @@ async function main () {
       startY: floorY - walkway.height * scale,
       scale
     })
+
+    if (showBoxes) {
+      canvas.context.strokeStyle = 'rgba(255, 0, 0, 0.5)'
+      canvas.context.beginPath()
+      for (const box of [sheepBox, sheepBox.clone().offset({ x }), ...interactables]) {
+        box.drawDebug({ canvas, scale, offsetX: shiftX, offsetY: floorY })
+      }
+      canvas.context.stroke()
+    }
   }).start()
 }
 
