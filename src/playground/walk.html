@@ -46,7 +46,9 @@ async function main () {
   const minX = -300
   const maxX = 300
   const scale = 3
-  const speed = 40 // px/s
+  const acceleration = 20 // px/s^2
+  const maxSpeed = 150
+  let speed = 40 // px/s
   let cameraX = 0
   let x = 0
   let walkInitX
@@ -60,6 +62,11 @@ async function main () {
         walking = true
         walkChangeTime = totalTime
         walkInitX = x
+        speed = 40
+      }
+      if (speed < maxSpeed) {
+        speed += acceleration * elapsedTime
+        if (speed > maxSpeed) speed = maxSpeed
       }
       if (keys.has('ArrowLeft')) {
         x -= speed * elapsedTime
