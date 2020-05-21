@@ -71,9 +71,9 @@ async function main () {
       }
       if (x < minX) x = minX
       if (x > maxX) x = maxX
-      const walkFrame = Math.floor((x - walkInitX) / PX_PER_WALK_CYCLE * FRAMES_PER_WALK_CYCLE)
+      const walkFrame = Math.floor(Math.abs(x - walkInitX) / PX_PER_WALK_CYCLE * FRAMES_PER_WALK_CYCLE)
       sheepWalk.frame = walkFrame % FRAMES_PER_WALK_CYCLE + 1
-      visualX = walkInitX + Math.floor((x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE
+      visualX = walkInitX + Math.floor(Math.abs(x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE * Math.sign(x - walkInitX)
     } else if (walking) {
       walking = false
     }
@@ -87,21 +87,47 @@ async function main () {
 
     const shiftX = canvas.width / 2 - cameraX
     if (walking) {
-      sheepWalk.draw({
-        canvas,
-        x: (visualX - sheepStill.width / 2) * scale + shiftX,
-        y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
-        width: sheepWalk.width * scale,
-        height: sheepWalk.height * scale
-      })
+      if (direction === 'left') {
+        canvas.context.save()
+        canvas.context.scale(-1, 1)
+        sheepWalk.draw({
+          canvas,
+          x: -(visualX + sheepStill.width / 2) * scale - shiftX,
+          y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
+          width: sheepWalk.width * scale,
+          height: sheepWalk.height * scale
+        })
+        canvas.context.restore()
+      } else {
+        sheepWalk.draw({
+          canvas,
+          x: (visualX - sheepStill.width / 2) * scale + shiftX,
+          y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
+          width: sheepWalk.width * scale,
+          height: sheepWalk.height * scale
+        })
+      }
     } else {
-      sheepStill.draw({
-        canvas,
-        x: (x - sheepStill.width / 2) * scale + shiftX,
-        y: canvas.height / 2 + (walkwayImage.height - sheepStill.height) * scale,
-        width: sheepStill.width * scale,
-        height: sheepStill.height * scale
-      })
+      if (direction === 'left') {
+        canvas.context.save()
+        canvas.context.scale(-1, 1)
+        sheepStill.draw({
+          canvas,
+          x: -(x + sheepStill.width / 2) * scale - shiftX,
+          y: canvas.height / 2 + (walkwayImage.height - sheepStill.height) * scale,
+          width: sheepStill.width * scale,
+          height: sheepStill.height * scale
+        })
+        canvas.context.restore()
+      } else {
+        sheepStill.draw({
+          canvas,
+          x: (x - sheepStill.width / 2) * scale + shiftX,
+          y: canvas.height / 2 + (walkwayImage.height - sheepStill.height) * scale,
+          width: sheepStill.width * scale,
+          height: sheepStill.height * scale
+        })
+      }
     }
     walkway.draw({
       canvas,
