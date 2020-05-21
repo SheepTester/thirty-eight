@@ -27,7 +27,8 @@ import { Walkway } from '../lib/walkway.js'
 import { Keys } from '../lib/keys.js'
 
 const FPS = 6
-const PX_PER_WALK = 18
+const PX_PER_WALK_CYCLE = 18
+const FRAMES_PER_WALK_CYCLE = 6
 
 async function main () {
   const canvas = new CanvasWrapper().addTo(document.body)
@@ -45,31 +46,66 @@ async function main () {
   const minX = -300
   const maxX = 300
   const scale = 3
-  const speed = 400
+  const speed = 40 // px/s
   let cameraX = 0
   let x = 0
-  function simulate (elapsedTime) {
-    if (keys.has('ArrowLeft')) {
-      x -= speed * elapsedTime
-    }
-    if (keys.has('ArrowRight')) {
-      x += speed * elapsedTime
+  let walkInitX
+  let walkChangeTime
+  let walking = false
+  let direction
+  function simulate (elapsedTime, totalTime) {
+    if (keys.has('ArrowLeft') !== keys.has('ArrowRight')) {
+      if (!walking) {
+        walking = true
+        walkChangeTime = totalTime
+        walkInitX = x
+      }
+      // sec * (px / sec) * ((frames / cycle) / (px / cycle)) => time -> frame
+      const walkFrame = Math.floor((totalTime - walkChangeTime) * speed * (FRAMES_PER_WALK_CYCLE / PX_PER_WALK_CYCLE))
+      sheepWalk.frame = walkFrame % FRAMES_PER_WALK_CYCLE + 1
+      if (keys.has('ArrowLeft')) {
+        x -= speed * elapsedTime
+        direction = 'left'
+      }
+      if (keys.has('ArrowRight')) {
+        x += speed * elapsedTime
+        direction = 'right'
+      }
+    } else if (walking) {
+      walking = false
     }
     if (x < minX) x = minX
     if (x > maxX) x = maxX
     cameraX += (x * scale - cameraX) * 1e-40 ** elapsedTime
   }
-  const simulator = new Simulator({ simulations: [{ simulate }] })
+  const simulator = new Simulator({ simulations: [{ simulate }, sheepStill] })
   const animator = new Animator(() => {
     simulator.simulate()
     canvas.context.clearRect(0, 0, canvas.width, canvas.height)
     canvas.context.imageSmoothingEnabled = false
 
     const shiftX = canvas.width / 2 - cameraX
+    if (walking) {
+      sheepWalk.draw({
+        canvas,
+        x: (walkInitX + Math.floor((x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE - sheepStill.width / 2) * scale + shiftX,
+        y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
+        width: sheepWalk.width * scale,
+        height: sheepWalk.height * scale
+      })
+    } else {
+      sheepStill.draw({
+        canvas,
+        x: (x - sheepStill.width / 2) * scale + shiftX,
+        y: canvas.height / 2 + (walkwayImage.height - sheepStill.height) * scale,
+        width: sheepStill.width * scale,
+        height: sheepStill.height * scale
+      })
+    }
     walkway.draw({
       canvas,
-      start: minX * scale + shiftX,
-      end: maxX * scale + shiftX,
+      start: (minX - sheepStill.width / 2) * scale + shiftX,
+      end: (maxX + sheepStill.width / 2) * scale + shiftX,
       y: canvas.height / 2,
       height: walkwayImage.height * scale
     })
