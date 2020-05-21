@@ -14,7 +14,7 @@ export class CanvasWrapper {
     this.parent = parent
     if (parent) {
       parent.appendChild(this.canvas)
-      parent.classList.remove('canvas-wrapper')
+      parent.classList.add('canvas-wrapper')
     }
     return this
   }
@@ -36,8 +36,8 @@ export class CanvasWrapper {
       this.height = height
       this.dpr = dpr
 
-      this.canvas.width = width
-      this.canvas.height = height
+      this.canvas.width = width * dpr
+      this.canvas.height = height * dpr
       this.context.scale(dpr, dpr)
 
       return this

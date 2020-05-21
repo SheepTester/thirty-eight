@@ -20,7 +20,14 @@ export class SpritesheetAnimation {
     return this
   }
 
-  draw ({ canvas: { context }, x = 0, y = 0, width = this.width, height = this.height }) {
+  draw ({
+    canvas: { context },
+    x = 0,
+    y = 0,
+    width = this.width,
+    height = this.height,
+    frame = this.frame
+  }) {
     context.drawImage(
       this.image,
       0,

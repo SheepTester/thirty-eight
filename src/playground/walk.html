@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Walk</title>
+    <meta name="description" content="Arrow keys to walk, perhaps?"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="/sheep3.css">
+    <script src="/sheep3.js" charset="utf-8"></script>
+    <style>
+      @import url('../css/basic.css');
+      @import url('../css/canvas.css');
+
+      body {
+        background-color: grey;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+import { CanvasWrapper, loadImage } from '../lib/canvas.js'
+import { SpritesheetAnimation } from '../lib/spritesheet-animation.js'
+import { Resizer } from '../lib/resizer.js'
+import { Animator } from '../lib/animator.js'
+import { Simulator } from '../lib/simulator.js'
+import { Walkway } from '../lib/walkway.js'
+import { Keys } from '../lib/keys.js'
+
+const FPS = 6
+const PX_PER_WALK = 18
+
+async function main () {
+  const canvas = new CanvasWrapper().addTo(document.body)
+  const resizer = new Resizer([canvas]).listen()
+  const { keys } = new Keys().listen()
+  const [sheepStillImage, sheepWalkImage, walkwayImage] = await Promise.all([
+    loadImage('../assets/sheep3.png'),
+    loadImage('../assets/sheep-walk.png'),
+    loadImage('../assets/metal-walkway.png'),
+    resizer.resize()
+  ])
+  const walkway = new Walkway({ image: walkwayImage })
+  const sheepStill = new SpritesheetAnimation({ image: sheepStillImage, fps: FPS, frames: 3 })
+  const sheepWalk = new SpritesheetAnimation({ image: sheepWalkImage, fps: FPS, frames: 8 })
+  const minX = -300
+  const maxX = 300
+  const scale = 3
+  const speed = 400
+  let cameraX = 0
+  let x = 0
+  function simulate (elapsedTime) {
+    if (keys.has('ArrowLeft')) {
+      x -= speed * elapsedTime
+    }
+    if (keys.has('ArrowRight')) {
+      x += speed * elapsedTime
+    }
+    if (x < minX) x = minX
+    if (x > maxX) x = maxX
+    cameraX += (x * scale - cameraX) * 1e-40 ** elapsedTime
+  }
+  const simulator = new Simulator({ simulations: [{ simulate }] })
+  const animator = new Animator(() => {
+    simulator.simulate()
+    canvas.context.clearRect(0, 0, canvas.width, canvas.height)
+    canvas.context.imageSmoothingEnabled = false
+
+    const shiftX = canvas.width / 2 - cameraX
+    walkway.draw({
+      canvas,
+      start: minX * scale + shiftX,
+      end: maxX * scale + shiftX,
+      y: canvas.height / 2,
+      height: walkwayImage.height * scale
+    })
+  }).start()
+}
+
+main()
+    </script>
+  </body>
+</html>
