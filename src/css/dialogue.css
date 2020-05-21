@@ -26,9 +26,11 @@
 .dialogue-body {
   display: flex;
   margin-top: 20px;
+  font-size: 20px;
 }
 .speaker-image {
   background-color: white;
+  height: calc(4em + 40px);
 }
 .dialogue-text-wrapper {
   flex: auto;
@@ -36,7 +38,6 @@
   position: relative;
   overflow: hidden;
   height: 4em;
-  font-size: 20px;
 }
 .dialogue-text {
   position: absolute;
