@@ -32,6 +32,11 @@ a {
   text-decoration: underline;
 }
 
+.pixelated {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
 :disabled {
   opacity: 0.5;
 }

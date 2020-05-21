@@ -10,13 +10,62 @@
     <style>
       @import url('../css/basic.css');
       @import url('../css/canvas.css');
+      @import url('../css/dialogue.css');
 
       body {
         background-color: grey;
       }
+
+      .dialogue-text {
+        animation: loop 10s infinite;
+      }
+      @keyframes loop {
+        0% {
+          top: 0;
+        }
+        18% {
+          top: 0;
+        }
+        20% {
+          top: -4em;
+        }
+        38% {
+          top: -4em;
+        }
+        40% {
+          top: -8em;
+        }
+        58% {
+          top: -8em;
+        }
+        60% {
+          top: -12em;
+        }
+        78% {
+          top: -12em;
+        }
+        80% {
+          top: -16em;
+        }
+        98% {
+          top: -16em;
+        }
+        100% {
+          top: 0;
+        }
+      }
     </style>
   </head>
   <body>
+    <div class="dialogue">
+      <h2 class="speaker-name sans-nouveaux">82300029</h2>
+      <div class="dialogue-body">
+        <img src="../assets/sheep2.png" class="speaker-image pixelated">
+        <div class="dialogue-text-wrapper">
+          <p class="dialogue-text sans-nouveaux">Nonetheless, due to strict guidelines set by the Department of Ovine English Terms, because the archive itself is considered an ovine work, its name must preserve its casing, spelling, specific Unicode codepoints, and bold/italic formatting. Thus, this site will aim to respect these terms and hopes others will too. Please note that the first two quotation marks and the apostrophe are ambidextrous, while the third quotation mark is an opening/left double quotation mark.</p>
+        </div>
+      </div>
+    </div>
     <script type="module">
 import { CanvasWrapper, loadImage } from '../lib/canvas.js'
 import { SpritesheetAnimation } from '../lib/spritesheet-animation.js'

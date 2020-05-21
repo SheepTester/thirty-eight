@@ -1,0 +1,9 @@
+@font-face {
+  font-family: 'Sans Nouveaux';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://sheeptester.github.io/assembly/static/fonts/px_sans_nouveaux.ttf') format('truetype');
+}
+.sans-nouveaux {
+  font-family: 'Sans Nouveaux', monospace;
+}
