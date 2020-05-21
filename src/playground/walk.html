@@ -51,6 +51,7 @@ async function main () {
   let x = 0
   let walkInitX
   let walkChangeTime
+  let visualX
   let walking = false
   let direction
   function simulate (elapsedTime, totalTime) {
@@ -60,9 +61,6 @@ async function main () {
         walkChangeTime = totalTime
         walkInitX = x
       }
-      // sec * (px / sec) * ((frames / cycle) / (px / cycle)) => time -> frame
-      const walkFrame = Math.floor((totalTime - walkChangeTime) * speed * (FRAMES_PER_WALK_CYCLE / PX_PER_WALK_CYCLE))
-      sheepWalk.frame = walkFrame % FRAMES_PER_WALK_CYCLE + 1
       if (keys.has('ArrowLeft')) {
         x -= speed * elapsedTime
         direction = 'left'
@@ -71,11 +69,14 @@ async function main () {
         x += speed * elapsedTime
         direction = 'right'
       }
+      if (x < minX) x = minX
+      if (x > maxX) x = maxX
+      const walkFrame = Math.floor((x - walkInitX) / PX_PER_WALK_CYCLE * FRAMES_PER_WALK_CYCLE)
+      sheepWalk.frame = walkFrame % FRAMES_PER_WALK_CYCLE + 1
+      visualX = walkInitX + Math.floor((x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE
     } else if (walking) {
       walking = false
     }
-    if (x < minX) x = minX
-    if (x > maxX) x = maxX
     cameraX += (x * scale - cameraX) * 1e-40 ** elapsedTime
   }
   const simulator = new Simulator({ simulations: [{ simulate }, sheepStill] })
@@ -88,7 +89,7 @@ async function main () {
     if (walking) {
       sheepWalk.draw({
         canvas,
-        x: (walkInitX + Math.floor((x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE - sheepStill.width / 2) * scale + shiftX,
+        x: (visualX - sheepStill.width / 2) * scale + shiftX,
         y: canvas.height / 2 + (walkwayImage.height - sheepWalk.height) * scale,
         width: sheepWalk.width * scale,
         height: sheepWalk.height * scale
