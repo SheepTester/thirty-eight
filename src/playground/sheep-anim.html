@@ -24,6 +24,7 @@ import { SpritesheetAnimation } from '../lib/spritesheet-animation.js'
 import { Resizer } from '../lib/resizer.js'
 import { Animator } from '../lib/animator.js'
 import { Simulator } from '../lib/simulator.js'
+import { Walkway } from '../lib/walkway.js'
 
 const canvas = new CanvasWrapper().addTo(document.body)
 
@@ -33,8 +34,9 @@ Promise.all([
   loadImage('../assets/sheep2.png'),
   loadImage('../assets/sheep3.png'),
   loadImage('../assets/sheep-walk.png'),
+  loadImage('../assets/metal-walkway.png'),
   resizer.resize()
-]).then(([sheep2, sheep3, sheepWalk]) => {
+]).then(([sheep2, sheep3, sheepWalk, walkwayImage]) => {
   const sheep2Anim = new SpritesheetAnimation({ image: sheep2, frames: 2, fps: 6 })
   const sheep3Anim = new SpritesheetAnimation({ image: sheep3, frames: 3, fps: 6 })
 
@@ -61,7 +63,9 @@ Promise.all([
   })
 
   let x1 = 100
+  let totalX1 = 100
   let x2 = 100
+  let totalX2 = 100
   const simulator = new Simulator({ simulations: [
     sheep2Anim,
     sheep3Anim,
@@ -73,11 +77,15 @@ Promise.all([
         // 10, 6 - frames in cycle
         // 18 - pixel jump per cycle
         // 2 - visual scale factor
-        x1 = -time * 20 + Math.floor(time * 6 / 10) * 18 * 2
-        x2 = -time * 35 + Math.floor(time * 6 / 6) * 18 * 2
+        x1 = -time * 20 + Math.floor(time * walkingSheep1.fps / 10) * 18 * 2
+        totalX1 = -time * 20
+        x2 = -time * 35 + Math.floor(time * walkingSheep2.fps / 6) * 18 * 2
+        totalX2 = -time * 35
       }
     }
   ] })
+
+  const walkway = new Walkway({ image: walkwayImage })
 
   const animator = new Animator(() => {
     simulator.simulate()
@@ -90,6 +98,8 @@ Promise.all([
     sheep3Anim.draw({ canvas, x: 150, y: 0, width: sheep3Anim.width * 2, height: sheep3Anim.height * 2 })
     walkingSheep1.draw({ canvas, x: x1, y: 100, width: walkingSheep1.width * 2, height: walkingSheep1.height * 2 })
     walkingSheep2.draw({ canvas, x: x2, y: 200, width: walkingSheep2.width * 2, height: walkingSheep2.height * 2 })
+    walkway.draw({ canvas, start: totalX1, y: 100 + walkingSheep1.height, height: walkingSheep1.height })
+    walkway.draw({ canvas, start: totalX2, y: 200 + walkingSheep2.height, height: walkingSheep2.height })
   }).start()
 })
     </script>
