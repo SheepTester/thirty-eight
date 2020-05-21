@@ -1,26 +1,16 @@
-export class CanvasWrapper {
+import { Element } from './element.js'
+
+export class CanvasWrapper extends Element {
   constructor () {
+    super()
+
     this.canvas = document.createElement('canvas')
     this.canvas.className = 'wrapped-canvas'
 
     this.context = this.canvas.getContext('2d')
-  }
 
-  addTo (parent) {
-    if (this.parent) {
-      this.parent.removeChild(this.canvas)
-      this.parent.classList.remove('canvas-wrapper')
-    }
-    this.parent = parent
-    if (parent) {
-      parent.appendChild(this.canvas)
-      parent.classList.add('canvas-wrapper')
-    }
-    return this
-  }
-
-  remove () {
-    return this.addTo(null)
+    this.wrapper = this.canvas
+    this.parentClass = 'canvas-wrapper'
   }
 
   async resize (then = Promise.resolve()) {

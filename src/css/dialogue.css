@@ -48,5 +48,6 @@
   top: 0;
   line-height: 2;
   width: 100%;
+  white-space: pre-wrap;
   transition: top .2s;
 }

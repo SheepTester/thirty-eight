@@ -15,57 +15,9 @@
       body {
         background-color: grey;
       }
-
-      .dialogue-text {
-        animation: loop 10s infinite;
-      }
-      @keyframes loop {
-        0% {
-          top: 0;
-        }
-        18% {
-          top: 0;
-        }
-        20% {
-          top: -4em;
-        }
-        38% {
-          top: -4em;
-        }
-        40% {
-          top: -8em;
-        }
-        58% {
-          top: -8em;
-        }
-        60% {
-          top: -12em;
-        }
-        78% {
-          top: -12em;
-        }
-        80% {
-          top: -16em;
-        }
-        98% {
-          top: -16em;
-        }
-        100% {
-          top: 0;
-        }
-      }
     </style>
   </head>
   <body>
-    <div class="dialogue">
-      <h2 class="speaker-name sans-nouveaux">82300029</h2>
-      <div class="dialogue-body">
-        <img src="../assets/happy.png" class="speaker-image pixelated">
-        <div class="dialogue-text-wrapper">
-          <p class="dialogue-text sans-nouveaux">Nonetheless, due to strict guidelines set by the Department of Ovine English Terms, because the archive itself is considered an ovine work, its name must preserve its casing, spelling, specific Unicode codepoints, and bold/italic formatting. Thus, this site will aim to respect these terms and hopes others will too. Please note that the first two quotation marks and the apostrophe are ambidextrous, while the third quotation mark is an opening/left double quotation mark.</p>
-        </div>
-      </div>
-    </div>
     <script type="module">
 import { CanvasWrapper, loadImage } from '../lib/canvas.js'
 import { SpritesheetAnimation } from '../lib/spritesheet-animation.js'
@@ -74,6 +26,7 @@ import { Animator } from '../lib/animator.js'
 import { Simulator } from '../lib/simulator.js'
 import { tile } from '../lib/tiler.js'
 import { Keys } from '../lib/keys.js'
+import { Dialogue } from '../lib/dialogue.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
@@ -82,25 +35,32 @@ const FRAMES_PER_WALK_CYCLE = 6
 const BACKGROUND_PARALLAX = 0.5
 
 async function main () {
+  const sheepSpeaker = { image: '../assets/happy.png', name: '19811764' }
+  const dialogue = new Dialogue().setSpeaker(sheepSpeaker)
+
   const canvas = new CanvasWrapper().addTo(document.body)
-  const resizer = new Resizer([canvas]).listen()
+  const resizer = new Resizer([canvas, dialogue]).listen()
   const { keys } = new Keys().listen()
+
   const [
     sheepStillImage,
     sheepWalkImage,
     walkway,
     warehouseWall,
-    warehouseWallFront
+    warehouseWallFront,
+    dialogueSrc
   ] = await Promise.all([
     loadImage('../assets/sheep3.png'),
     loadImage('../assets/sheep-walk.png'),
     loadImage('../assets/metal-walkway.png'),
     loadImage('../assets/warehouse-wall.png'),
     loadImage('../assets/warehouse-wall-darker.png'),
+    fetch('../dialogue/test.json').then(r => r.json()),
     resizer.resize()
   ])
   const sheepStill = new SpritesheetAnimation({ image: sheepStillImage, fps: FPS, frames: 3 })
   const sheepWalk = new SpritesheetAnimation({ image: sheepWalkImage, fps: FPS, frames: 8 })
+
   const minX = -300
   const maxX = 300
   const scale = 3
@@ -112,8 +72,42 @@ async function main () {
   let visualX
   let walking = false
   let direction
+
+  let wasPressingArrowUp = false
+  let wasPressingEnter = false
   function simulate (elapsedTime, totalTime) {
-    if (keys.has('ArrowLeft') !== keys.has('ArrowRight')) {
+    if (!dialogue.speaking) {
+      if (keys.has('Enter')) {
+        if (!wasPressingEnter) {
+          dialogue.speak(dialogueSrc.sample)
+          dialogue.addTo(document.body)
+          dialogue.measureSections()
+          wasPressingEnter = true
+        }
+      } else if (wasPressingEnter) {
+        wasPressingEnter = false
+      }
+    }
+    if (dialogue.speaking) {
+      if (keys.has('ArrowUp')) {
+        if (!wasPressingArrowUp) {
+          dialogue.up()
+          wasPressingArrowUp = true
+        }
+      } else if (wasPressingArrowUp) {
+        wasPressingArrowUp = false
+      }
+      if (keys.has('Enter')) {
+        if (!wasPressingEnter) {
+          const done = dialogue.down()
+          if (done) dialogue.remove()
+          wasPressingEnter = true
+        }
+      } else if (wasPressingEnter) {
+        wasPressingEnter = false
+      }
+    }
+    if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialogue.speaking) {
       if (!walking) {
         walking = true
         walkChangeTime = totalTime
@@ -157,11 +151,11 @@ async function main () {
     tile({
       image: warehouseWallFront,
       canvas,
-      startX: (minX - sheepStill.width / 2) * scale - Math.ceil(canvas.width / (warehouseWallFront.width * scale * 3)) * warehouseWallFront.width * scale * 3 + shiftX,
+      startX: (minX - sheepStill.width / 2) * scale - Math.ceil(canvas.width / (warehouseWallFront.width * scale * 3)) * warehouseWallFront.width * scale * 2.7 + shiftX,
       endX: (minX - sheepStill.width / 2) * scale + shiftX,
-      startY: 0,
+      startY: -100,
       endY: canvas.height,
-      scale: scale * 3
+      scale: scale * 2.7
     })
     if (walking) {
       if (direction === 'left') {
