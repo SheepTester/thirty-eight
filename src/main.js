@@ -33,7 +33,10 @@ export default async function main () {
       walkway: './assets/metal-walkway.png',
       warehouseWall: './assets/warehouse-wall.png',
       warehouseWallFront: './assets/warehouse-wall-darker.png',
-      enterKey: './assets/enter-key.png'
+      enterKey: './assets/enter-key.png',
+      light: './assets/light.png',
+      walkwayDoor: './assets/walkway-door.png',
+      warningSign: './assets/warning-sign.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
@@ -53,7 +56,8 @@ export default async function main () {
     height: -sheepStill.height
   })
   const interactables = [
-    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor })
+    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
+    Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign })
   ]
 
   const scale = 3
@@ -151,6 +155,7 @@ export default async function main () {
     cameraX += (x * scale - cameraX) * 1e-60 ** elapsedTime
   }
   const simulator = new Simulator({ simulations: [{ simulate }, sheepStill] })
+  const drawer = new PropDrawer({ canvas, scale })
   const animator = new Animator(() => {
     simulator.simulate()
     canvas.context.clearRect(0, 0, canvas.width, canvas.height)
@@ -158,7 +163,7 @@ export default async function main () {
 
     const floorY = canvas.height / 2
     const shiftX = canvas.width / 2 - cameraX
-    tile({
+    tile({ // BACKGROUND
       image: images.warehouseWall,
       canvas,
       startX: (minX - sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
@@ -167,7 +172,12 @@ export default async function main () {
       endY: canvas.height,
       scale: scale * 2
     })
-    tile({
+    drawer.draw({ // Light
+      image: images.light,
+      x: (minX - sheepStill.width / 2) * scale + shiftX,
+      y: floorY - 100 * scale
+    })
+    tile({ // WALL (start)
       image: images.warehouseWallFront,
       canvas,
       startX: (minX - sheepStill.width / 2) * scale - Math.ceil(canvas.width / (images.warehouseWallFront.width * scale * 3)) * images.warehouseWallFront.width * scale * 2.7 + shiftX,
@@ -176,7 +186,27 @@ export default async function main () {
       endY: canvas.height,
       scale: scale * 2.7
     })
-    if (walking) {
+    tile({ // WALL (office)
+      image: images.warehouseWallFront,
+      canvas,
+      startX: (maxX + sheepStill.width / 2) * scale + shiftX,
+      endX: canvas.width,
+      startY: -100,
+      endY: canvas.height,
+      scale: scale * 2.7
+    })
+    drawer.draw({ // Door
+      image: images.walkwayDoor,
+      x: 0 * scale + shiftX,
+      y: floorY - images.walkwayDoor.height * scale * 1.5 - scale * 5,
+      scale: scale * 1.5
+    })
+    drawer.draw({ // Sign
+      image: images.warningSign,
+      x: 40 * scale + shiftX,
+      y: floorY - (images.warningSign.height + 15) * scale
+    })
+    if (walking) { // SHEEP
       if (direction === 'left') {
         canvas.context.save()
         canvas.context.scale(-1, 1)
@@ -219,7 +249,7 @@ export default async function main () {
         })
       }
     }
-    tile({
+    tile({ // WALKWAY
       image: images.walkway,
       canvas,
       startX: (minX - sheepStill.width / 2) * scale + shiftX,

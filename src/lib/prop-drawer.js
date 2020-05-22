@@ -9,17 +9,13 @@ export class PropDrawer {
       image,
       x = 0,
       y = 0,
-      scrollX = 0,
-      scrollY = 0,
       scale = 1
     } = Object.assign({}, this, options)
-    const visualX = x * scale + scrollX
-    const visualY = y * scale + scrollY
     const visualWidth = image.width * scale
     const visualHeight = image.height * scale
-    if (!(visualX + visualWidth < 0 || visualY + visualHeight < 0 ||
-      visualX > width || visualY > height)) {
-      context.drawImage(image, visualX, visualY, visualWidth, visualHeight)
+    if (!(x + visualWidth < 0 || y + visualHeight < 0 ||
+      x > width || y > height)) {
+      context.drawImage(image, x, y, visualWidth, visualHeight)
     }
     return this
   }
