@@ -30,6 +30,13 @@ class Box {
     return this
   }
 
+  middle () {
+    return {
+      x: (this._x1 + this._x2) / 2,
+      y: (this._y1 + this._y2) / 2
+    }
+  }
+
   clone () {
     return new Box(this._x1, this._y1, this._x2, this._y2, this.data)
   }

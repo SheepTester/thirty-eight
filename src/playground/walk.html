@@ -52,6 +52,7 @@ async function main () {
     walkway,
     warehouseWall,
     warehouseWallFront,
+    enterKeyImage,
     dialogueSrc
   ] = await Promise.all([
     loadImage('../assets/sheep3.png'),
@@ -59,6 +60,7 @@ async function main () {
     loadImage('../assets/metal-walkway.png'),
     loadImage('../assets/warehouse-wall.png'),
     loadImage('../assets/warehouse-wall-darker.png'),
+    loadImage('../assets/enter-key.png'),
     fetch('../dialogue/test.json').then(r => r.json()),
     resizer.resize()
   ])
@@ -81,8 +83,9 @@ async function main () {
 
   const scale = 3
   const speed = 40 // px/s
-  let cameraX = 0
-  let x = 0
+  const enterKeys = new Set()
+  let x = minX + 50
+  let cameraX = x * scale
   let walkInitX
   let walkChangeTime
   let visualX
@@ -93,9 +96,34 @@ async function main () {
   let wasPressingEnter = false
   function simulate (elapsedTime, totalTime) {
     if (!dialogue.speaking) {
+      const sheep = sheepBox.clone().offset({ x })
+      let selectedBox
+      for (const interactable of interactables) {
+        if (interactable.intersects(sheep)) {
+          selectedBox = interactable
+          if (!interactable.data.enterKey) {
+            interactable.data.enterKey = {
+              opacity: 0,
+              x: interactable.middle().x
+            }
+            enterKeys.add(interactable.data.enterKey)
+          }
+          const { enterKey } = interactable.data
+          if (enterKey.opacity < 1) {
+            enterKey.opacity += elapsedTime / 0.2
+            if (enterKey.opacity > 1) enterKey.opacity = 1
+          }
+        } else if (interactable.data.enterKey) {
+          interactable.data.enterKey.opacity -= elapsedTime / 0.2
+          if (interactable.data.enterKey.opacity < 0) {
+            enterKeys.delete(interactable.data.enterKey)
+            interactable.data.enterKey = null
+          }
+        }
+      }
       if (keys.has('Enter')) {
-        if (!wasPressingEnter) {
-          dialogue.speak(dialogueSrc.sample)
+        if (selectedBox && !wasPressingEnter) {
+          dialogue.speak(selectedBox.data.say)
           dialogue.addTo(document.body)
           dialogue.resize()
           wasPressingEnter = true
@@ -224,11 +252,24 @@ async function main () {
       startY: floorY - walkway.height * scale,
       scale
     })
-
+    if (!dialogue.speaking) {
+      canvas.context.save()
+      for (const { opacity, x } of enterKeys) {
+        canvas.context.globalAlpha = opacity
+        canvas.context.drawImage(
+          enterKeyImage,
+          (x - enterKeyImage.width / 2) * scale + shiftX,
+          floorY + (1 - (1 - opacity) ** 3) * scale * 3 + 10,
+          enterKeyImage.width * scale,
+          enterKeyImage.height * scale
+        )
+      }
+      canvas.context.restore()
+    }
     if (showBoxes) {
       canvas.context.strokeStyle = 'rgba(255, 0, 0, 0.5)'
       canvas.context.beginPath()
-      for (const box of [sheepBox, sheepBox.clone().offset({ x }), ...interactables]) {
+      for (const box of [sheepBox.clone().offset({ x }), ...interactables]) {
         box.drawDebug({ canvas, scale, offsetX: shiftX, offsetY: floorY })
       }
       canvas.context.stroke()
