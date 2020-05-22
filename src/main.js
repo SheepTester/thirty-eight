@@ -17,6 +17,7 @@ const BACKGROUND_PARALLAX = 0.5
 
 const params = new URL(window.location).searchParams
 const showBoxes = params.get('show-boxes')
+const speedy = params.get('speedy')
 
 export default async function main () {
   const sheepSpeaker = { image: new URL('./assets/happy.png', import.meta.url), name: '19811764' }
@@ -36,7 +37,10 @@ export default async function main () {
       enterKey: './assets/enter-key.png',
       light: './assets/light.png',
       walkwayDoor: './assets/walkway-door.png',
-      warningSign: './assets/warning-sign.png'
+      warningSign: './assets/warning-sign.png',
+      logo: './assets/ol43.png',
+      officeWindow: './assets/window.png',
+      officeLogo: './assets/office-logo.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
@@ -61,7 +65,7 @@ export default async function main () {
   ]
 
   const scale = 3
-  const speed = 40 // px/s
+  const speed = speedy ? 400 : 40 // px/s
   const enterKeys = new Set()
   let x = minX + 50
   let cameraX = x * scale
@@ -166,10 +170,16 @@ export default async function main () {
     tile({ // BACKGROUND
       image: images.warehouseWall,
       canvas,
-      startX: (minX - sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
-      endX: (maxX + sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
+      startX: (minX - sheepStill.width / 2 - canvas.width) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
+      endX: (maxX + sheepStill.width / 2 + canvas.width) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
       startY: 0,
       endY: canvas.height,
+      scale: scale * 2
+    })
+    drawer.draw({ // OL-43
+      image: images.logo,
+      x: -200 * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
+      y: floorY - 70 * scale,
       scale: scale * 2
     })
     drawer.draw({ // Light
@@ -195,6 +205,23 @@ export default async function main () {
       endY: canvas.height,
       scale: scale * 2.7
     })
+    drawer.draw({ // Window 1
+      image: images.officeWindow,
+      x: (maxX + sheepStill.width / 2 + 20) * scale + shiftX,
+      y: floorY - (images.officeWindow.height * 2 + 20) * scale,
+      scale: scale * 2
+    })
+    drawer.draw({ // Window 2
+      image: images.officeWindow,
+      x: (maxX + sheepStill.width / 2 + 40 + images.officeWindow.width * 2) * scale + shiftX,
+      y: floorY - (images.officeWindow.height * 2 + 20) * scale,
+      scale: scale * 2
+    })
+    drawer.draw({ // Office logo
+      image: images.officeLogo,
+      x: (maxX + sheepStill.width / 2 + 20) * scale + shiftX,
+      y: floorY - (images.officeLogo.height + images.officeWindow.height + 50) * scale
+    })
     drawer.draw({ // Door
       image: images.walkwayDoor,
       x: 0 * scale + shiftX,
@@ -204,7 +231,7 @@ export default async function main () {
     drawer.draw({ // Sign
       image: images.warningSign,
       x: 40 * scale + shiftX,
-      y: floorY - (images.warningSign.height + 15) * scale
+      y: floorY - (images.warningSign.height + 15.5) * scale
     })
     if (walking) { // SHEEP
       if (direction === 'left') {
@@ -264,7 +291,7 @@ export default async function main () {
         canvas.context.drawImage(
           images.enterKey,
           (x - images.enterKey.width / 2) * scale + shiftX,
-          floorY + (1 - (1 - opacity) ** 3) * scale * 3 + 10,
+          floorY - (1 - (1 - opacity) ** 3) * scale * 3 + 20,
           images.enterKey.width * scale,
           images.enterKey.height * scale
         )
