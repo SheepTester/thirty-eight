@@ -1,4 +1,4 @@
-import { CanvasWrapper, loadImage } from './lib/canvas.js'
+import { CanvasWrapper, loadImages } from './lib/canvas.js'
 import { SpritesheetAnimation } from './lib/spritesheet-animation.js'
 import { Resizer } from './lib/resizer.js'
 import { Animator } from './lib/animator.js'
@@ -7,6 +7,7 @@ import { tile } from './lib/tiler.js'
 import { Keys } from './lib/keys.js'
 import { Dialogue } from './lib/dialogue.js'
 import * as Box from './lib/box.js'
+import { PropDrawer } from './lib/prop-drawer.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
@@ -25,28 +26,22 @@ export default async function main () {
   const resizer = new Resizer([canvas, dialogue]).listen()
   const { keys } = new Keys().listen()
 
-  const [
-    sheepStillImage,
-    sheepWalkImage,
-    walkway,
-    warehouseWall,
-    warehouseWallFront,
-    enterKeyImage,
-    dialogueSrc
-  ] = await Promise.all([
-    loadImage(new URL('./assets/sheep3.png', import.meta.url)),
-    loadImage(new URL('./assets/sheep-walk.png', import.meta.url)),
-    loadImage(new URL('./assets/metal-walkway.png', import.meta.url)),
-    loadImage(new URL('./assets/warehouse-wall.png', import.meta.url)),
-    loadImage(new URL('./assets/warehouse-wall-darker.png', import.meta.url)),
-    loadImage(new URL('./assets/enter-key.png', import.meta.url)),
+  const [images, dialogueSrc] = await Promise.all([
+    loadImages({
+      sheepStill: './assets/sheep3.png',
+      sheepWalk: './assets/sheep-walk.png',
+      walkway: './assets/metal-walkway.png',
+      warehouseWall: './assets/warehouse-wall.png',
+      warehouseWallFront: './assets/warehouse-wall-darker.png',
+      enterKey: './assets/enter-key.png'
+    }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
     resizer.resize()
   ])
 
-  const sheepStill = new SpritesheetAnimation({ image: sheepStillImage, fps: FPS, frames: 3 })
-  const sheepWalk = new SpritesheetAnimation({ image: sheepWalkImage, fps: FPS, frames: 8 })
+  const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
+  const sheepWalk = new SpritesheetAnimation({ image: images.sheepWalk, fps: FPS, frames: 8 })
 
   const minX = -300
   const maxX = 300
@@ -164,7 +159,7 @@ export default async function main () {
     const floorY = canvas.height / 2
     const shiftX = canvas.width / 2 - cameraX
     tile({
-      image: warehouseWall,
+      image: images.warehouseWall,
       canvas,
       startX: (minX - sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
       endX: (maxX + sheepStill.width / 2) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
@@ -173,9 +168,9 @@ export default async function main () {
       scale: scale * 2
     })
     tile({
-      image: warehouseWallFront,
+      image: images.warehouseWallFront,
       canvas,
-      startX: (minX - sheepStill.width / 2) * scale - Math.ceil(canvas.width / (warehouseWallFront.width * scale * 3)) * warehouseWallFront.width * scale * 2.7 + shiftX,
+      startX: (minX - sheepStill.width / 2) * scale - Math.ceil(canvas.width / (images.warehouseWallFront.width * scale * 3)) * images.warehouseWallFront.width * scale * 2.7 + shiftX,
       endX: (minX - sheepStill.width / 2) * scale + shiftX,
       startY: -100,
       endY: canvas.height,
@@ -225,11 +220,11 @@ export default async function main () {
       }
     }
     tile({
-      image: walkway,
+      image: images.walkway,
       canvas,
       startX: (minX - sheepStill.width / 2) * scale + shiftX,
       endX: (maxX + sheepStill.width / 2) * scale + shiftX,
-      startY: floorY - walkway.height * scale,
+      startY: floorY - images.walkway.height * scale,
       scale
     })
     if (!dialogue.speaking) {
@@ -237,11 +232,11 @@ export default async function main () {
       for (const { opacity, x } of enterKeys) {
         canvas.context.globalAlpha = opacity
         canvas.context.drawImage(
-          enterKeyImage,
-          (x - enterKeyImage.width / 2) * scale + shiftX,
+          images.enterKey,
+          (x - images.enterKey.width / 2) * scale + shiftX,
           floorY + (1 - (1 - opacity) ** 3) * scale * 3 + 10,
-          enterKeyImage.width * scale,
-          enterKeyImage.height * scale
+          images.enterKey.width * scale,
+          images.enterKey.height * scale
         )
       }
       canvas.context.restore()

@@ -47,3 +47,11 @@ export function loadImage (url) {
     image.src = url
   })
 }
+
+export function loadImages (urls, base = window.location) {
+  return Promise.all(Object.entries(urls)
+    .map(([name, url]) =>
+      loadImage(new URL(url, base))
+        .then(image => [name, image])))
+    .then(images => Object.fromEntries(images))
+}
