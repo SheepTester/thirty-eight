@@ -20,8 +20,25 @@ const showBoxes = params.get('show-boxes')
 const speedy = params.get('speedy')
 
 export default async function main () {
-  const sheepSpeaker = { image: new URL('./assets/happy.png', import.meta.url), name: '19811764' }
-  const dialogue = new Dialogue().setSpeaker(sheepSpeaker)
+  const speakers = {
+    sheep: { image: new URL('./assets/happy.png', import.meta.url), name: '37' },
+    guard: { image: new URL('./assets/guard-profile.png', import.meta.url), name: 'Guard' }
+  }
+  const dialogue = new Dialogue().setSpeaker(speakers.sheep)
+
+  let dialoguing = false
+  async function dialogueInteraction (lines) {
+    dialoguing = true
+    dialogue.addTo(document.body)
+    for (const [speakerID, line] of lines) {
+      const speakingDone = dialogue.setSpeaker(speakers[speakerID])
+        .speak(line)
+      dialogue.resize()
+      await speakingDone
+    }
+    dialogue.remove()
+    dialoguing = false
+  }
 
   const canvas = new CanvasWrapper().addTo(document.body)
   const resizer = new Resizer([canvas, dialogue]).listen()
@@ -40,18 +57,22 @@ export default async function main () {
       warningSign: './assets/warning-sign.png',
       logo: './assets/ol43.png',
       officeWindow: './assets/window.png',
-      officeLogo: './assets/office-logo.png'
+      officeLogo: './assets/office-logo.png',
+      guard: './assets/guard.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
     resizer.resize()
   ])
 
+  dialogueInteraction([['sheep', dialogueSrc.intro]])
+
   const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
   const sheepWalk = new SpritesheetAnimation({ image: images.sheepWalk, fps: FPS, frames: 8 })
+  const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
 
-  const minX = -300
-  const maxX = 300
+  const minX = -500
+  const maxX = 500
 
   const sheepBox = Box.fromDimensions({
     x: -sheepStill.width / 2,
@@ -59,10 +80,13 @@ export default async function main () {
     width: sheepStill.width,
     height: -sheepStill.height
   })
-  const interactables = [
+  const interactables = new Set([
     Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
-    Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign })
-  ]
+    Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign }),
+    Box.fromDimensions({ x: 200, width: images.warningSign.width }, { say: dialogueSrc.milkSpotted, auto: true }),
+    Box.fromDimensions({ x: maxX - 100, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
+    Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true })
+  ])
 
   const scale = 3
   const speed = speedy ? 400 : 40 // px/s
@@ -78,12 +102,13 @@ export default async function main () {
   let wasPressingArrowUp = false
   let wasPressingEnter = false
   function simulate (elapsedTime, totalTime) {
-    if (!dialogue.speaking) {
+    if (!dialoguing) {
       const sheep = sheepBox.clone().offset({ x })
       let selectedBox
       for (const interactable of interactables) {
         if (interactable.intersects(sheep)) {
           selectedBox = interactable
+          if (interactable.data.auto) continue
           if (!interactable.data.enterKey) {
             interactable.data.enterKey = {
               opacity: 0,
@@ -104,17 +129,21 @@ export default async function main () {
           }
         }
       }
-      if (keys.has('Enter')) {
-        if (selectedBox && !wasPressingEnter) {
-          dialogue.speak(selectedBox.data.say)
-          dialogue.addTo(document.body)
-          dialogue.resize()
-          wasPressingEnter = true
+      if (selectedBox && (keys.has('Enter') && !wasPressingEnter || selectedBox.data.auto)) {
+        if (selectedBox.data.auto) {
+          interactables.delete(selectedBox)
         }
-      } else if (wasPressingEnter) {
+        if (selectedBox.data.say) {
+          const speakData = selectedBox.data.say
+          dialogueInteraction(Array.isArray(speakData) ? speakData : [['sheep', speakData]])
+        }
+        wasPressingEnter = true
+      } else if (wasPressingEnter && !keys.has('Enter')) {
         wasPressingEnter = false
       }
     }
+    // Using dialogue.speaking instead of dialoguing because it better reflects
+    // whether up/enter can actually do things
     if (dialogue.speaking) {
       if (keys.has('ArrowUp')) {
         if (!wasPressingArrowUp) {
@@ -126,15 +155,14 @@ export default async function main () {
       }
       if (keys.has('Enter')) {
         if (!wasPressingEnter) {
-          const done = dialogue.down()
-          if (done) dialogue.remove()
+          dialogue.down()
           wasPressingEnter = true
         }
       } else if (wasPressingEnter) {
         wasPressingEnter = false
       }
     }
-    if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialogue.speaking) {
+    if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialoguing) {
       if (!walking) {
         walking = true
         walkChangeTime = totalTime
@@ -156,9 +184,9 @@ export default async function main () {
     } else if (walking) {
       walking = false
     }
-    cameraX += (x * scale - cameraX) * 1e-60 ** elapsedTime
+    cameraX += (x * scale - cameraX) * 0.1 // Assumes constant step time
   }
-  const simulator = new Simulator({ simulations: [{ simulate }, sheepStill] })
+  const simulator = new Simulator({ simulations: [{ simulate }, sheepStill, guard], stepTime: 0.01 })
   const drawer = new PropDrawer({ canvas, scale })
   const animator = new Animator(() => {
     simulator.simulate()
@@ -172,7 +200,7 @@ export default async function main () {
       canvas,
       startX: (minX - sheepStill.width / 2 - canvas.width) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
       endX: (maxX + sheepStill.width / 2 + canvas.width) * scale + canvas.width / 2 - cameraX * BACKGROUND_PARALLAX,
-      startY: 0,
+      startY: -20,
       endY: canvas.height,
       scale: scale * 2
     })
@@ -233,6 +261,13 @@ export default async function main () {
       x: 40 * scale + shiftX,
       y: floorY - (images.warningSign.height + 15.5) * scale
     })
+    guard.draw({ // GUARD
+      canvas,
+      x: (maxX - guard.width / 2) * scale + shiftX,
+      y: floorY - guard.height * scale,
+      width: guard.width * scale,
+      height: guard.height * scale
+    })
     if (walking) { // SHEEP
       if (direction === 'left') {
         canvas.context.save()
@@ -242,7 +277,8 @@ export default async function main () {
           x: -(visualX + sheepStill.width / 2) * scale - shiftX,
           y: floorY - sheepWalk.height * scale,
           width: sheepWalk.width * scale,
-          height: sheepWalk.height * scale
+          height: sheepWalk.height * scale,
+          alwaysDraw: true
         })
         canvas.context.restore()
       } else {
@@ -251,7 +287,8 @@ export default async function main () {
           x: (visualX - sheepStill.width / 2) * scale + shiftX,
           y: floorY - sheepWalk.height * scale,
           width: sheepWalk.width * scale,
-          height: sheepWalk.height * scale
+          height: sheepWalk.height * scale,
+          alwaysDraw: true
         })
       }
     } else {
@@ -263,7 +300,8 @@ export default async function main () {
           x: -(x + sheepStill.width / 2) * scale - shiftX,
           y: floorY - sheepStill.height * scale,
           width: sheepStill.width * scale,
-          height: sheepStill.height * scale
+          height: sheepStill.height * scale,
+          alwaysDraw: true
         })
         canvas.context.restore()
       } else {
@@ -272,7 +310,8 @@ export default async function main () {
           x: (x - sheepStill.width / 2) * scale + shiftX,
           y: floorY - sheepStill.height * scale,
           width: sheepStill.width * scale,
-          height: sheepStill.height * scale
+          height: sheepStill.height * scale,
+          alwaysDraw: true
         })
       }
     }
@@ -284,7 +323,7 @@ export default async function main () {
       startY: floorY - images.walkway.height * scale,
       scale
     })
-    if (!dialogue.speaking) {
+    if (!dialoguing) {
       canvas.context.save()
       for (const { opacity, x } of enterKeys) {
         canvas.context.globalAlpha = opacity

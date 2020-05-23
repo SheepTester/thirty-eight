@@ -79,9 +79,11 @@ export class Dialogue extends Element {
 
     this._elems.dialogueText.textContent = text
     this.setSection(0)
-    this.speaking = true
+    this.speaking = new Promise(resolve => (this._onDone = resolve)).then(() => {
+      this.speaking = false
+    })
 
-    return this
+    return this.speaking
   }
 
   measureSections () {
@@ -119,11 +121,10 @@ export class Dialogue extends Element {
 
   down () {
     if (this.section >= this.sections - 1) {
-      this.speaking = false
-      return true
+      this._onDone()
     } else {
       this.setSection(this.section + 1)
-      return false
     }
+    return this
   }
 }

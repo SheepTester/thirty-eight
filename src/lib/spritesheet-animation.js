@@ -21,24 +21,27 @@ export class SpritesheetAnimation {
   }
 
   draw ({
-    canvas: { context },
+    canvas: { context, width: canvasWidth, height: canvasHeight },
     x = 0,
     y = 0,
     width = this.width,
     height = this.height,
-    frame = this.frame
+    frame = this.frame,
+    alwaysDraw = false
   }) {
-    context.drawImage(
-      this.image,
-      0,
-      this.frame * this.height,
-      this.width,
-      this.height,
-      x,
-      y,
-      width,
-      height
-    )
+    if (alwaysDraw || x + width >= 0 && y + height >= 0 && x < canvasWidth && y < canvasHeight) {
+      context.drawImage(
+        this.image,
+        0,
+        this.frame * this.height,
+        this.width,
+        this.height,
+        x,
+        y,
+        width,
+        height
+      )
+    }
     return this
   }
 }

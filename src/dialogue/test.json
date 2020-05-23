@@ -1,4 +1,12 @@
 { "sample": "I attest to the following: I shall not give or receive aid during this exam. My answers will be entirely my own. Plagiarism software will scan my responses. My teacher will receive my responses.\nIf I give or receive help or submit work that is not my own: My score will be canceled. My attempt to cheat will be reported to college admissions offices and my high school. I will be banned from future College Board exams. Anyone who helps me or receives help from me will be investigated.\nMy grandfather picks up quartz and valuable onyx jewels. Send 60 dozen quart jars and 12 black pans."
 , "startDoor": "There’s an emergency door here, but I think I’ve locked myself out!"
-, "warningSign": "Exit only.\n\nWell, I am indeed exiting. What a law abiding citizen I am!"
+, "warningSign": "“Exit only.”\n\nWell, I am indeed exiting. What a law abiding citizen I am!"
+, "intro": "Hi! My name is 37, but you can call me by my English name, Thirty-Eight."
+, "milkSpotted": "Hm, I am a bit thirsty for some MILK. I see a little office beyond here. Maybe they will have milk?"
+, "guardInteraction":
+  [ ["guard", "Hey, you! Where are you going?"]
+  , ["sheep", "I’m just looking for some milk in that office."]
+  , ["guard", "The office is for authorized personnel only."]
+  ]
+, "goAway": [["guard", "Go away."]]
 }
