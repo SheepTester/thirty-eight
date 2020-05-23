@@ -87,7 +87,8 @@ export default async function main () {
     Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign }),
     Box.fromDimensions({ x: 200, width: images.warningSign.width }, { say: dialogueSrc.milkSpotted, auto: true }),
     Box.fromDimensions({ x: maxX - 100, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
-    Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true })
+    Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true }),
+    Box.fromDimensions({ x: maxX - 60, width: 100 }, { combat: true, auto: true })
   ])
 
   const scale = 3
@@ -100,6 +101,14 @@ export default async function main () {
   let visualX
   let walking = false
   let direction
+  let combatMode = false
+  let combatModeSince
+  function setCombatMode (mode) {
+    if (mode !== combatMode) {
+      combatMode = mode
+      combatModeSince = Date.now()
+    }
+  }
 
   let wasPressingArrowUp = false
   let wasPressingEnter = false
@@ -132,12 +141,15 @@ export default async function main () {
         }
       }
       if (selectedBox && (keys.has('Enter') && !wasPressingEnter || selectedBox.data.auto)) {
-        if (selectedBox.data.auto) {
+        const { auto, say, combat } = selectedBox.data
+        if (auto) {
           interactables.delete(selectedBox)
         }
-        if (selectedBox.data.say) {
-          const speakData = selectedBox.data.say
-          dialogueInteraction(Array.isArray(speakData) ? speakData : [['sheep', speakData]])
+        if (say) {
+          dialogueInteraction(Array.isArray(say) ? say : [['sheep', say]])
+        }
+        if (combat) {
+          setCombatMode(true)
         }
         wasPressingEnter = true
       } else if (wasPressingEnter && !keys.has('Enter')) {
@@ -345,6 +357,21 @@ export default async function main () {
         )
       }
       canvas.context.restore()
+    }
+    if (combatMode || combatModeSince) {
+      let transitionIn = Math.min(1 - (1 - (Date.now() - combatModeSince) / 1000) ** 3, 1)
+      if (!combatMode) transitionIn = 1 - transitionIn
+      if (transitionIn <= 0) {
+        if (!combatMode) {
+          combatModeSince = null
+        }
+      } else {
+        canvas.context.fillStyle = `rgba(255, 0, 0, ${transitionIn * 0.3})`
+        canvas.context.fillRect(0, 0, canvas.width, canvas.height)
+        canvas.context.fillStyle = 'black'
+        canvas.context.fillRect(0, 0, canvas.width, canvas.height * 0.15 * transitionIn)
+        canvas.context.fillRect(0, canvas.height, canvas.width, -canvas.height * 0.15 * transitionIn)
+      }
     }
     if (showBoxes) {
       canvas.context.strokeStyle = 'rgba(255, 0, 0, 0.5)'
