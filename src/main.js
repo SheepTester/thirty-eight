@@ -20,11 +20,7 @@ const showBoxes = params.get('show-boxes')
 const speedy = params.get('speedy')
 
 export default async function main () {
-  const speakers = {
-    sheep: { image: new URL('./assets/happy.png', import.meta.url), name: '37' },
-    guard: { image: new URL('./assets/guard-profile.png', import.meta.url), name: 'Guard' }
-  }
-  const dialogue = new Dialogue().setSpeaker(speakers.sheep)
+  const dialogue = new Dialogue()
 
   let dialoguing = false
   async function dialogueInteraction (lines) {
@@ -58,13 +54,19 @@ export default async function main () {
       logo: './assets/ol43.png',
       officeWindow: './assets/window.png',
       officeLogo: './assets/office-logo.png',
-      guard: './assets/guard.png'
+      guard: './assets/guard.png',
+      sheepProfile: './assets/happy.png',
+      guardProfile: './assets/guard-profile.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
     resizer.resize()
   ])
 
+  const speakers = {
+    sheep: { image: images.sheepProfile, name: '37' },
+    guard: { image: images.guardProfile, name: 'Guard' }
+  }
   dialogueInteraction([['sheep', dialogueSrc.intro]])
 
   const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
@@ -165,16 +167,22 @@ export default async function main () {
     if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialoguing) {
       if (!walking) {
         walking = true
-        walkChangeTime = totalTime
-        walkInitX = x
       }
       if (keys.has('ArrowLeft')) {
+        if (direction !== 'left') {
+          walkChangeTime = totalTime
+          walkInitX = x
+          direction = 'left'
+        }
         x -= speed * elapsedTime
-        direction = 'left'
       }
       if (keys.has('ArrowRight')) {
+        if (direction !== 'right') {
+          walkChangeTime = totalTime
+          walkInitX = x
+          direction = 'right'
+        }
         x += speed * elapsedTime
-        direction = 'right'
       }
       if (x < minX) x = minX
       if (x > maxX) x = maxX
@@ -183,6 +191,7 @@ export default async function main () {
       visualX = walkInitX + Math.floor(Math.abs(x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE * Math.sign(x - walkInitX)
     } else if (walking) {
       walking = false
+      direction = null
     }
     cameraX += (x * scale - cameraX) * 0.1 // Assumes constant step time
   }

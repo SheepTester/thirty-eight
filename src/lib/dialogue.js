@@ -12,13 +12,16 @@ export class Dialogue extends Element {
 
     this.speaking = false
     this.section = 0
+
+    this._lastImage = null
   }
 
   _initElems () {
     const speakerName = document.createElement('h2')
     speakerName.className = 'speaker-name sans-nouveaux'
 
-    const speakerImage = document.createElement('img')
+    const speakerImage = document.createElement('canvas')
+    const context = speakerImage.getContext('2d')
     speakerImage.className = 'speaker-image pixelated'
 
     const dialogueText = document.createElement('div')
@@ -56,7 +59,7 @@ export class Dialogue extends Element {
     wrapper.appendChild(speakerName)
     wrapper.appendChild(dialogueBody)
 
-    this._elems = { speakerName, speakerImage, dialogueText, wrapper }
+    this._elems = { speakerName, speakerImage, context, dialogueText, wrapper }
   }
 
   get wrapper () {
@@ -64,9 +67,14 @@ export class Dialogue extends Element {
   }
 
   setSpeaker ({ name, image }) {
-    const { speakerName, speakerImage } = this._elems
+    const { speakerName, speakerImage, context } = this._elems
     speakerName.textContent = name
-    speakerImage.src = image
+    if (image !== this._lastImage) {
+      speakerImage.width = image.width
+      speakerImage.height = image.height
+      context.drawImage(image, 0, 0)
+      this._lastImage = image
+    }
     return this
   }
 
