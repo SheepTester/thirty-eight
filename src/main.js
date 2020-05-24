@@ -11,6 +11,7 @@ import { PropDrawer } from './lib/prop-drawer.js'
 import { Vector2 } from './lib/vector2.js'
 import { ParticleManager } from './lib/particle-manager.js'
 import { SinglePointer } from './lib/pointer.js'
+import { HealthBar } from './lib/health-bar.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
@@ -78,6 +79,10 @@ export default async function main () {
   const minX = -500
   const maxX = 500
 
+  function targetHit ({ data: { affects: healthBar } }, { data: { damage } }) {
+    healthBar.damage(damage)
+  }
+
   const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
   const sheepWalk = new SpritesheetAnimation({ image: images.sheepWalk, fps: FPS, frames: 8 })
   const particleManager = new ParticleManager({
@@ -96,11 +101,13 @@ export default async function main () {
     speed: new Vector2(200, 0),
     maxAge: 10,
     cooldown: 0.05,
-    // auto: false
+    targetHit,
+    damage: 0.2
   })
   const sheepUglyOffset = new Vector2(15, 5) // Ugly not because of the sheep but because of the code
   sheepPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height).add(sheepUglyOffset))
   sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2 - 20, -sheepPropeller.spritesheet.height / 2 - 5).add(sheepUglyOffset))
+  const sheepHealth = new HealthBar(10)
 
   function getGoodAngle (mouse) {
     // Assumes that speed has no y component lol
@@ -115,10 +122,13 @@ export default async function main () {
     position: new Vector2(maxX, -5 - sheepPropeller.spritesheet.height / 2),
     speed: new Vector2(-100, 0),
     maxAge: 10,
-    cooldown: 0.5
+    cooldown: 0.3,
+    targetHit,
+    damage: 1
   })
   guardPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width + 20, -sheepPropeller.spritesheet.height / 2))
   guardPropeller.source.set(new Vector2(-guardPropeller.spritesheet.width - 5, -guardPropeller.spritesheet.height / 2 + 5))
+  const guardHealth = new HealthBar(15)
 
   const sheepBox = Box.fromDimensions({
     x: -sheepStill.width / 2,
@@ -139,6 +149,17 @@ export default async function main () {
       auto: true
     })
   ])
+  const sheepHitbox = sheepBox.clone()
+  sheepHitbox.data.affects = sheepHealth
+  guardPropeller.targets.add(sheepHitbox)
+  const guardHitbox = Box.fromDimensions({
+    x: maxX - guard.width / 2,
+    y: 0,
+    width: guard.width,
+    height: -guard.height
+  })
+  guardHitbox.data.affects = guardHealth
+  sheepPropeller.targets.add(guardHitbox)
 
   const scale = 3
   const speed = speedy ? 400 : 40 // px/s
@@ -163,8 +184,8 @@ export default async function main () {
   let wasPressingArrowUp = false
   let wasPressingEnter = false
   function simulate (elapsedTime, totalTime) {
+    const sheep = sheepBox.clone().offset({ x })
     if (!dialoguing) {
-      const sheep = sheepBox.clone().offset({ x })
       let selectedBox
       for (const interactable of interactables) {
         if (interactable.intersects(sheep)) {
@@ -258,6 +279,14 @@ export default async function main () {
     }
     cameraX += (x * scale - cameraX) * 0.1 // Assumes constant step time
     if (combatMode) {
+      if (sheepHealth.isDead() || guardHealth.isDead()) {
+        setCombatMode(false)
+        sheepPropeller.active = false
+        guardPropeller.active = false
+      }
+    }
+    if (combatMode) {
+      sheepHitbox.set(sheep)
       let angle = getGoodAngle(pointer.position.clone().sub(offset).scale(1 / scale))
       if (!Number.isNaN(angle)) {
         if (angle < -Math.PI / 4) angle = -Math.PI / 4
@@ -265,6 +294,9 @@ export default async function main () {
         sheepPropeller.angle = angle
       }
       sheepPropeller.active = pointer.down
+      if (guardPropeller.active) {
+        guardPropeller.angle = Math.sin(totalTime * 5) * Math.PI / 6
+      }
     }
   }
   const simulator = new Simulator({ simulations: [
@@ -350,6 +382,12 @@ export default async function main () {
       x: 40 * scale + shiftX,
       y: floorY - (images.warningSign.height + 15.5) * scale
     })
+    guard.draw({ // GUARD
+      canvas,
+      x: (maxX - guard.width / 2) * scale + shiftX,
+      y: floorY - guard.height * scale,
+      scale
+    })
     if (combatMode) {
       sheepPropeller.position.set({ x: direction === 'left' ? x + 5 : x - 5 })
       sheepPropeller.draw({
@@ -365,12 +403,8 @@ export default async function main () {
         frame: guardPropeller.timeSinceLastShot(simulator.simulatedTime) < 0.05 ? 1 : 0
       })
     }
-    guard.draw({ // GUARD
-      canvas,
-      x: (maxX - guard.width / 2) * scale + shiftX,
-      y: floorY - guard.height * scale,
-      scale
-    })
+    guardHealth.draw({ canvas, x: maxX * scale + shiftX, y: floorY - 150 })
+    sheepHealth.draw({ canvas, x: x * scale + shiftX, y: floorY - 150 })
     if (walking) { // SHEEP
       if (direction === 'left') {
         canvas.context.save()

@@ -17,6 +17,8 @@ class Propeller {
     maxAge = Infinity,
     cooldown = 1,
     auto = true,
+    targetHit = () => {},
+    ...data
   } = {}) {
     this.manager = manager
     this.spritesheet = spritesheet
@@ -28,9 +30,12 @@ class Propeller {
     this.maxAge = maxAge
     this.cooldown = cooldown
     this.auto = auto
+    this.targetHit = targetHit
+    this.data = data
 
     this.active = false
     this._lastShot = 0
+    this.targets = new Set()
   }
 
   attemptShoot (time) {
@@ -101,6 +106,14 @@ export class ParticleManager {
       particle.age += elapsedTime
       if (particle.age > particle.propeller.maxAge || !this.bounds.contains(particle.position)) {
         this._particles.delete(particle)
+      } else {
+        for (const target of particle.propeller.targets) {
+          if (target.contains(particle.position)) {
+            particle.propeller.targetHit(target, particle.propeller)
+            this._particles.delete(particle)
+            break
+          }
+        }
       }
     }
     return this

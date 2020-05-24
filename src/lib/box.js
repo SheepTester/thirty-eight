@@ -29,6 +29,15 @@ class Box {
     return this
   }
 
+  set (box) {
+    this._x1 = box._x1
+    this._y1 = box._y1
+    this._x2 = box._x2
+    this._y2 = box._y2
+    // Does not copy data
+    return this
+  }
+
   offset ({ x = 0, y = 0 } = {}) {
     this._x1 += x
     this._y1 += y
@@ -49,7 +58,7 @@ class Box {
   }
 }
 
-export function fromDiagonal ({ x1 = 0, y1 = 0, x2 = 0, y2 = 0 }, data = null) {
+export function fromDiagonal ({ x1 = 0, y1 = 0, x2 = 0, y2 = 0 }, data = {}) {
   return new Box(
     Math.min(x1, x2),
     Math.min(y1, y2),
@@ -59,18 +68,18 @@ export function fromDiagonal ({ x1 = 0, y1 = 0, x2 = 0, y2 = 0 }, data = null) {
   )
 }
 
-export function fromDimensions ({ x = 0, y = 0, width = 0, height = 0 }, data = null) {
+export function fromDimensions ({ x = 0, y = 0, width = 0, height = 0 }, data = {}) {
   return fromDiagonal({ x1: x, y1: y, x2: x + width, y2: y + height }, data)
 }
 
-export function fromRadius ({ x = 0, y = 0, xr = 0, yr = 0 }, data = null) {
+export function fromRadius ({ x = 0, y = 0, xr = 0, yr = 0 }, data = {}) {
   return fromDiagonal({ x1: x - xr, y1: y - yr, x2: x + xr, y2: y + yr }, data)
 }
 
-export function universe (data = null) {
+export function universe (data = {}) {
   return new Box(-Infinity, -Infinity, Infinity, Infinity, data)
 }
 
-export function point ({ x = 0, y = 0 } = {}, data = null) {
+export function point ({ x = 0, y = 0 } = {}, data = {}) {
   return new Box(x, y, x, y, data)
 }
