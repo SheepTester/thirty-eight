@@ -9,7 +9,7 @@ class Propeller {
     // Offset of the top left corner from the anchor for rendering the propeller (will be rotated)
     offset = new Vector2(),
     // Angle of the propeller
-    angle = 0.1, // TEMP
+    angle = 0,
     // Offset from the anchor from where the particles will be spawned (will be rotated)
     source = new Vector2(),
     // The speed of the particles (will be rotated)

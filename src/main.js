@@ -100,7 +100,6 @@ export default async function main () {
   const sheepUglyOffset = new Vector2(15, 5) // Ugly not because of the sheep but because of the code
   sheepPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height).add(sheepUglyOffset))
   sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2 - 20, -sheepPropeller.spritesheet.height / 2 - 5).add(sheepUglyOffset))
-  sheepPropeller.active = true // TEMP
 
   const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
   const guardPropeller = particleManager.createPropeller({
@@ -112,7 +111,6 @@ export default async function main () {
   })
   guardPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width + 20, -sheepPropeller.spritesheet.height / 2))
   guardPropeller.source.set(new Vector2(-guardPropeller.spritesheet.width - 5, -guardPropeller.spritesheet.height / 2 + 5))
-  guardPropeller.active = true // TEMP
 
   const sheepBox = Box.fromDimensions({
     x: -sheepStill.width / 2,
@@ -128,7 +126,8 @@ export default async function main () {
     Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true }),
     Box.fromDimensions({ x: maxX - 60, width: 100 }, {
       combat () {
-        // particleManager.
+        sheepPropeller.active = true
+        guardPropeller.active = true
       },
       auto: true
     })
@@ -152,7 +151,6 @@ export default async function main () {
       combatModeSince = Date.now()
     }
   }
-  setCombatMode(true) // TEMP
 
   let wasPressingArrowUp = false
   let wasPressingEnter = false
