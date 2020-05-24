@@ -9,12 +9,12 @@ class Propeller {
     // Offset of the top left corner from the anchor for rendering the propeller (will be rotated)
     offset = new Vector2(),
     // Angle of the propeller
-    angle = 0.1,
+    angle = 0.1, // TEMP
     // Offset from the anchor from where the particles will be spawned (will be rotated)
     source = new Vector2(),
     // The speed of the particles (will be rotated)
     speed = new Vector2(0, 1),
-    maxAge = 10,
+    maxAge = Infinity,
     cooldown = 1,
     auto = true,
   } = {}) {
@@ -34,11 +34,12 @@ class Propeller {
   }
 
   attemptShoot (time) {
-    if (time > this._lastShot + his.cooldown) {
+    if (time > this._lastShot + this.cooldown) {
       this.manager.addParticle({
         position: this.source.clone().rotate(this.angle).add(this.position),
         velocity: this.speed.clone().rotate(this.angle),
-        propeller: this
+        propeller: this,
+        age: 0
       })
       this._lastShot = time
     }
@@ -46,7 +47,6 @@ class Propeller {
   }
 
   simulate (_, totalTime) {
-    this.angle = Math.sin(totalTime * 5) * Math.PI / 4
     if (this.auto && this.active) {
       this.attemptShoot(totalTime)
     }
@@ -66,6 +66,7 @@ class Propeller {
 }
 
 const PARTICLE_SIZE = 2
+const STREAK_LENGTH = 5
 
 export class ParticleManager {
   constructor ({
@@ -88,14 +89,15 @@ export class ParticleManager {
   }
 
   simulate (elapsedTime, totalTime) {
-    for (const particle of this._particles) {
-      particle.position.add(particle.velocity.clone().scale(elapsedTime))
-      if (!this.bounds.contains(particle.position)) {
-        this._particles.delete(particle)
-      }
-    }
     for (const propeller of this._propellers) {
       propeller.simulate(elapsedTime, totalTime)
+    }
+    for (const particle of this._particles) {
+      particle.position.add(particle.velocity.clone().scale(elapsedTime))
+      particle.age += elapsedTime
+      if (particle.age > particle.propeller.maxAge || !this.bounds.contains(particle.position)) {
+        this._particles.delete(particle)
+      }
     }
     return this
   }
@@ -110,22 +112,26 @@ export class ParticleManager {
     margin = 10
   }) {
     c.save()
-    c.fillStyle = 'red'
+    c.strokeStyle = '#ff5500'
+    c.lineWidth = PARTICLE_SIZE
     const visibleBox = Box.fromDimensions({
       x: -margin,
       y: -margin,
       width: width + margin,
       height: height + margin
-    }).offset(offset)
+    })
+    c.beginPath()
     for (const particle of this._particles) {
-      const corner = particle.position.clone()
-        .add({ x: -PARTICLE_SIZE / 2, y: -PARTICLE_SIZE / 2 })
+      const { position, velocity, angle } = particle
+      const corner = position.clone()
         .scale(scale)
         .add(offset)
       if (visibleBox.contains(corner)) {
-        c.fillRect(...corner, PARTICLE_SIZE * scale, PARTICLE_SIZE * scale)
+        c.moveTo(...corner)
+        c.lineTo(...corner.clone().add(velocity.clone().unit().scale(-STREAK_LENGTH * scale)))
       }
     }
+    c.stroke()
     c.restore()
     return this
   }

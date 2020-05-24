@@ -77,7 +77,7 @@ export default async function main () {
   const maxX = 500
 
   const particleManager = new ParticleManager({
-    bounds: Box.fromDiagonal({ x1: minX, x2: maxX, y1: 0, y2: Infinity })
+    bounds: Box.fromDiagonal({ x1: minX, x2: maxX, y1: 0, y2: -Infinity })
   })
 
   const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
@@ -92,23 +92,27 @@ export default async function main () {
       }
     }),
     position: new Vector2(0, -sheepStill.height + 10),
-    speed: new Vector2(10, 0),
+    speed: new Vector2(200, 0),
+    maxAge: 10,
     cooldown: 0.05,
     // auto: false
   })
   const sheepUglyOffset = new Vector2(15, 5) // Ugly not because of the sheep but because of the code
   sheepPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height).add(sheepUglyOffset))
-  sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height / 2).add(sheepUglyOffset))
+  sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2 - 20, -sheepPropeller.spritesheet.height / 2 - 5).add(sheepUglyOffset))
+  sheepPropeller.active = true // TEMP
 
   const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
   const guardPropeller = particleManager.createPropeller({
-    spritesheet: new SpritesheetAnimation({ image: images.guardPropeller, fps: FPS, frames: 2 }),
+    spritesheet: new SpritesheetAnimation({ image: images.guardPropeller, fps: 2, frames: 2 }),
     position: new Vector2(maxX, -5 - sheepPropeller.spritesheet.height / 2),
-    speed: new Vector2(-10, 0),
+    speed: new Vector2(-100, 0),
+    maxAge: 10,
     cooldown: 0.5
   })
   guardPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width + 20, -sheepPropeller.spritesheet.height / 2))
-  guardPropeller.source.set(new Vector2(-guardPropeller.spritesheet.width, -guardPropeller.spritesheet.height / 2))
+  guardPropeller.source.set(new Vector2(-guardPropeller.spritesheet.width - 5, -guardPropeller.spritesheet.height / 2 + 5))
+  guardPropeller.active = true // TEMP
 
   const sheepBox = Box.fromDimensions({
     x: -sheepStill.width / 2,
@@ -253,7 +257,8 @@ export default async function main () {
     sheepStill,
     guard,
     particleManager,
-    sheepPropeller.spritesheet
+    sheepPropeller.spritesheet,
+    // guardPropeller.spritesheet
   ], stepTime: 0.01 })
   const drawer = new PropDrawer({ canvas, scale })
   const animator = new Animator(() => {
