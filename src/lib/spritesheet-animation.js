@@ -24,8 +24,7 @@ export class SpritesheetAnimation {
     canvas: { context, width: canvasWidth, height: canvasHeight },
     x = 0,
     y = 0,
-    width = this.width,
-    height = this.height,
+    scale = 1,
     frame = this.frame,
     alwaysDraw = false
   }) {
@@ -38,8 +37,8 @@ export class SpritesheetAnimation {
         this.height,
         x,
         y,
-        width,
-        height
+        this.width * scale,
+        this.height * scale
       )
     }
     return this

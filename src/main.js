@@ -8,6 +8,8 @@ import { Keys } from './lib/keys.js'
 import { Dialogue } from './lib/dialogue.js'
 import * as Box from './lib/box.js'
 import { PropDrawer } from './lib/prop-drawer.js'
+import { Vector2 } from './lib/vector2.js'
+import { ParticleManager } from './lib/particle-manager.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
@@ -56,7 +58,9 @@ export default async function main () {
       officeLogo: './assets/office-logo.png',
       guard: './assets/guard.png',
       sheepProfile: './assets/happy.png',
-      guardProfile: './assets/guard-profile.png'
+      guardProfile: './assets/guard-profile.png',
+      sheepPropeller: './assets/expeller.png',
+      guardPropeller: './assets/particle-propeller.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
@@ -69,12 +73,40 @@ export default async function main () {
   }
   dialogueInteraction([['sheep', dialogueSrc.intro]])
 
-  const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
-  const sheepWalk = new SpritesheetAnimation({ image: images.sheepWalk, fps: FPS, frames: 8 })
-  const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
-
   const minX = -500
   const maxX = 500
+
+  const particleManager = new ParticleManager({
+    bounds: Box.fromDiagonal({ x1: minX, x2: maxX, y1: 0, y2: Infinity })
+  })
+
+  const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
+  const sheepWalk = new SpritesheetAnimation({ image: images.sheepWalk, fps: FPS, frames: 8 })
+  const sheepPropeller = particleManager.createPropeller({
+    spritesheet: new SpritesheetAnimation({
+      image: images.sheepPropeller,
+      fps: FPS,
+      frames: 3,
+      getFrame (totalFrames) {
+        return totalFrames % 2 + 1
+      }
+    }),
+    offset: new Vector2(-sheepStill.width / 2, -sheepStill.height),
+    source: new Vector2(0, -40),
+    speed: new Vector2(10, 0),
+    cooldown: 0.05,
+    auto: false
+  })
+
+  const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
+  const guardPropeller = particleManager.createPropeller({
+    spritesheet: new SpritesheetAnimation({ image: images.guardPropeller, fps: FPS, frames: 2 }),
+    position: new Vector2(maxX, 0),
+    offset: new Vector2(0, 0),
+    source: new Vector2(-40, 0),
+    speed: new Vector2(-10, 0),
+    cooldown: 0.5
+  })
 
   const sheepBox = Box.fromDimensions({
     x: -sheepStill.width / 2,
@@ -88,7 +120,12 @@ export default async function main () {
     Box.fromDimensions({ x: 200, width: images.warningSign.width }, { say: dialogueSrc.milkSpotted, auto: true }),
     Box.fromDimensions({ x: maxX - 100, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
     Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true }),
-    Box.fromDimensions({ x: maxX - 60, width: 100 }, { combat: true, auto: true })
+    Box.fromDimensions({ x: maxX - 60, width: 100 }, {
+      combat () {
+        // particleManager.
+      },
+      auto: true
+    })
   ])
 
   const scale = 3
@@ -150,6 +187,7 @@ export default async function main () {
         }
         if (combat) {
           setCombatMode(true)
+          combat()
         }
         wasPressingEnter = true
       } else if (wasPressingEnter && !keys.has('Enter')) {
@@ -179,6 +217,7 @@ export default async function main () {
     if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialoguing) {
       if (!walking) {
         walking = true
+        direction = null
       }
       if (keys.has('ArrowLeft')) {
         if (direction !== 'left') {
@@ -203,11 +242,16 @@ export default async function main () {
       visualX = walkInitX + Math.floor(Math.abs(x - walkInitX) / PX_PER_WALK_CYCLE) * PX_PER_WALK_CYCLE * Math.sign(x - walkInitX)
     } else if (walking) {
       walking = false
-      direction = null
     }
     cameraX += (x * scale - cameraX) * 0.1 // Assumes constant step time
   }
-  const simulator = new Simulator({ simulations: [{ simulate }, sheepStill, guard], stepTime: 0.01 })
+  const simulator = new Simulator({ simulations: [
+    { simulate },
+    sheepStill,
+    guard,
+    particleManager,
+    sheepPropeller.spritesheet
+  ], stepTime: 0.01 })
   const drawer = new PropDrawer({ canvas, scale })
   const animator = new Animator(() => {
     simulator.simulate()
@@ -282,12 +326,15 @@ export default async function main () {
       x: 40 * scale + shiftX,
       y: floorY - (images.warningSign.height + 15.5) * scale
     })
+    if (combatMode) {
+      sheepPropeller.draw({ canvas, scale })
+      sheepPropeller.draw({ canvas, scale })
+    }
     guard.draw({ // GUARD
       canvas,
       x: (maxX - guard.width / 2) * scale + shiftX,
       y: floorY - guard.height * scale,
-      width: guard.width * scale,
-      height: guard.height * scale
+      scale
     })
     if (walking) { // SHEEP
       if (direction === 'left') {
@@ -297,8 +344,7 @@ export default async function main () {
           canvas,
           x: -(visualX + sheepStill.width / 2) * scale - shiftX,
           y: floorY - sheepWalk.height * scale,
-          width: sheepWalk.width * scale,
-          height: sheepWalk.height * scale,
+          scale,
           alwaysDraw: true
         })
         canvas.context.restore()
@@ -307,8 +353,7 @@ export default async function main () {
           canvas,
           x: (visualX - sheepStill.width / 2) * scale + shiftX,
           y: floorY - sheepWalk.height * scale,
-          width: sheepWalk.width * scale,
-          height: sheepWalk.height * scale,
+          scale,
           alwaysDraw: true
         })
       }
@@ -320,8 +365,7 @@ export default async function main () {
           canvas,
           x: -(x + sheepStill.width / 2) * scale - shiftX,
           y: floorY - sheepStill.height * scale,
-          width: sheepStill.width * scale,
-          height: sheepStill.height * scale,
+          scale,
           alwaysDraw: true
         })
         canvas.context.restore()
@@ -330,12 +374,12 @@ export default async function main () {
           canvas,
           x: (x - sheepStill.width / 2) * scale + shiftX,
           y: floorY - sheepStill.height * scale,
-          width: sheepStill.width * scale,
-          height: sheepStill.height * scale,
+          scale,
           alwaysDraw: true
         })
       }
     }
+    particleManager.draw({ canvas, scale, offset: new Vector2(shiftX, floorY) })
     tile({ // WALKWAY
       image: images.walkway,
       canvas,

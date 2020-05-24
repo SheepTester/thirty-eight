@@ -1,3 +1,5 @@
+import { inRange } from './math.js'
+
 class Box {
   constructor (x1, y1, x2, y2, data) {
     this._x1 = x1
@@ -5,6 +7,11 @@ class Box {
     this._x2 = x2
     this._y2 = y2
     this.data = data
+  }
+
+  contains ({ x, y }) {
+    return inRange(x, { min: this._x1, max: this._x2 }) &&
+      inRange(y, { min: this._y1, max: this._y2 })
   }
 
   intersects (box) {
@@ -58,4 +65,12 @@ export function fromDimensions ({ x = 0, y = 0, width = 0, height = 0 }, data = 
 
 export function fromRadius ({ x = 0, y = 0, xr = 0, yr = 0 }, data = null) {
   return fromDiagonal({ x1: x - xr, y1: y - yr, x2: x + xr, y2: y + yr }, data)
+}
+
+export function universe (data = null) {
+  return new Box(-Infinity, -Infinity, Infinity, Infinity, data)
+}
+
+export function point ({ x = 0, y = 0 } = {}, data = null) {
+  return new Box(x, y, x, y, data)
 }
