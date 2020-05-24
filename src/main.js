@@ -91,22 +91,24 @@ export default async function main () {
         return totalFrames % 2 + 1
       }
     }),
-    offset: new Vector2(-sheepStill.width / 2, -sheepStill.height),
-    source: new Vector2(0, -40),
+    position: new Vector2(0, -sheepStill.height + 10),
     speed: new Vector2(10, 0),
     cooldown: 0.05,
-    auto: false
+    // auto: false
   })
+  const sheepUglyOffset = new Vector2(15, 5) // Ugly not because of the sheep but because of the code
+  sheepPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height).add(sheepUglyOffset))
+  sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height / 2).add(sheepUglyOffset))
 
   const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
   const guardPropeller = particleManager.createPropeller({
     spritesheet: new SpritesheetAnimation({ image: images.guardPropeller, fps: FPS, frames: 2 }),
-    position: new Vector2(maxX, 0),
-    offset: new Vector2(0, 0),
-    source: new Vector2(-40, 0),
+    position: new Vector2(maxX, -5 - sheepPropeller.spritesheet.height / 2),
     speed: new Vector2(-10, 0),
     cooldown: 0.5
   })
+  guardPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width + 20, -sheepPropeller.spritesheet.height / 2))
+  guardPropeller.source.set(new Vector2(-guardPropeller.spritesheet.width, -guardPropeller.spritesheet.height / 2))
 
   const sheepBox = Box.fromDimensions({
     x: -sheepStill.width / 2,
@@ -146,6 +148,7 @@ export default async function main () {
       combatModeSince = Date.now()
     }
   }
+  setCombatMode(true) // TEMP
 
   let wasPressingArrowUp = false
   let wasPressingEnter = false
@@ -260,6 +263,7 @@ export default async function main () {
 
     const floorY = canvas.height / 2
     const shiftX = canvas.width / 2 - cameraX
+    const offset = new Vector2(shiftX, floorY)
     tile({ // BACKGROUND
       image: images.warehouseWall,
       canvas,
@@ -327,8 +331,9 @@ export default async function main () {
       y: floorY - (images.warningSign.height + 15.5) * scale
     })
     if (combatMode) {
-      sheepPropeller.draw({ canvas, scale })
-      sheepPropeller.draw({ canvas, scale })
+      sheepPropeller.position.set({ x: direction === 'left' ? x + 5 : x - 5 })
+      sheepPropeller.draw({ canvas, scale, offset })
+      guardPropeller.draw({ canvas, scale, offset })
     }
     guard.draw({ // GUARD
       canvas,
@@ -379,7 +384,7 @@ export default async function main () {
         })
       }
     }
-    particleManager.draw({ canvas, scale, offset: new Vector2(shiftX, floorY) })
+    particleManager.draw({ canvas, scale, offset })
     tile({ // WALKWAY
       image: images.walkway,
       canvas,

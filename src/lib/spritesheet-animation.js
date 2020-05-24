@@ -21,14 +21,16 @@ export class SpritesheetAnimation {
   }
 
   draw ({
-    canvas: { context, width: canvasWidth, height: canvasHeight },
+    canvas: { context, width, height },
     x = 0,
     y = 0,
     scale = 1,
     frame = this.frame,
     alwaysDraw = false
   }) {
-    if (alwaysDraw || x + width >= 0 && y + height >= 0 && x < canvasWidth && y < canvasHeight) {
+    const visualWidth = this.width * scale
+    const visualHeight = this.height * scale
+    if (alwaysDraw || x + visualWidth >= 0 && y + visualHeight >= 0 && x < width && y < height) {
       context.drawImage(
         this.image,
         0,
@@ -37,8 +39,8 @@ export class SpritesheetAnimation {
         this.height,
         x,
         y,
-        this.width * scale,
-        this.height * scale
+        visualWidth,
+        visualHeight
       )
     }
     return this

@@ -9,12 +9,12 @@ class Propeller {
     // Offset of the top left corner from the anchor for rendering the propeller (will be rotated)
     offset = new Vector2(),
     // Angle of the propeller
-    angle = 0,
+    angle = 0.1,
     // Offset from the anchor from where the particles will be spawned (will be rotated)
     source = new Vector2(),
     // The speed of the particles (will be rotated)
     speed = new Vector2(0, 1),
-    maxAge = 10
+    maxAge = 10,
     cooldown = 1,
     auto = true,
   } = {}) {
@@ -46,19 +46,20 @@ class Propeller {
   }
 
   simulate (_, totalTime) {
+    this.angle = Math.sin(totalTime * 5) * Math.PI / 4
     if (this.auto && this.active) {
       this.attemptShoot(totalTime)
     }
     return this
   }
 
-  draw ({ canvas, scale, frame }) {
-    const { context: canvas } = canvas
+  draw ({ canvas, scale, frame, offset }) {
+    const { context: c } = canvas
     c.save()
-    c.translate(...this.position)
+    const centre = this.position.clone().scale(scale).add(offset)
+    c.translate(...centre)
     c.rotate(this.angle)
-    c.translate(...this.position.clone().scale(-1))
-    this.spritesheet.draw({ canvas, ...this.offset, scale, frame, alwaysDraw: true })
+    this.spritesheet.draw({ canvas, ...this.offset.clone().scale(scale), scale, frame, alwaysDraw: true })
     c.restore()
     return this
   }
