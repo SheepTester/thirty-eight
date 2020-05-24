@@ -10,6 +10,7 @@ import * as Box from './lib/box.js'
 import { PropDrawer } from './lib/prop-drawer.js'
 import { Vector2 } from './lib/vector2.js'
 import { ParticleManager } from './lib/particle-manager.js'
+import { SinglePointer } from './lib/pointer.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
@@ -41,6 +42,7 @@ export default async function main () {
   const canvas = new CanvasWrapper().addTo(document.body)
   const resizer = new Resizer([canvas, dialogue]).listen()
   const { keys } = new Keys().listen()
+  const pointer = new SinglePointer(canvas.canvas).listen()
 
   const [images, dialogueSrc] = await Promise.all([
     loadImages({
@@ -76,12 +78,11 @@ export default async function main () {
   const minX = -500
   const maxX = 500
 
-  const particleManager = new ParticleManager({
-    bounds: Box.fromDiagonal({ x1: minX, x2: maxX, y1: 0, y2: -Infinity })
-  })
-
   const sheepStill = new SpritesheetAnimation({ image: images.sheepStill, fps: FPS, frames: 3 })
   const sheepWalk = new SpritesheetAnimation({ image: images.sheepWalk, fps: FPS, frames: 8 })
+  const particleManager = new ParticleManager({
+    bounds: Box.fromDiagonal({ x1: minX - sheepStill.width / 2, x2: maxX + sheepStill.width / 2, y1: 0, y2: -Infinity })
+  })
   const sheepPropeller = particleManager.createPropeller({
     spritesheet: new SpritesheetAnimation({
       image: images.sheepPropeller,
@@ -100,6 +101,13 @@ export default async function main () {
   const sheepUglyOffset = new Vector2(15, 5) // Ugly not because of the sheep but because of the code
   sheepPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height).add(sheepUglyOffset))
   sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2 - 20, -sheepPropeller.spritesheet.height / 2 - 5).add(sheepUglyOffset))
+
+  function getGoodAngle (mouse) {
+    // Assumes that speed has no y component lol
+    const { position, source } = sheepPropeller
+    const positionToMouse = mouse.clone().sub(position)
+    return positionToMouse.angle + Math.acos(source.y / positionToMouse.length)
+  }
 
   const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
   const guardPropeller = particleManager.createPropeller({
@@ -126,7 +134,6 @@ export default async function main () {
     Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true }),
     Box.fromDimensions({ x: maxX - 60, width: 100 }, {
       combat () {
-        sheepPropeller.active = true
         guardPropeller.active = true
       },
       auto: true
@@ -145,6 +152,7 @@ export default async function main () {
   let direction
   let combatMode = false
   let combatModeSince
+  let offset = new Vector2()
   function setCombatMode (mode) {
     if (mode !== combatMode) {
       combatMode = mode
@@ -249,6 +257,15 @@ export default async function main () {
       walking = false
     }
     cameraX += (x * scale - cameraX) * 0.1 // Assumes constant step time
+    if (combatMode) {
+      let angle = getGoodAngle(pointer.position.clone().sub(offset).scale(1 / scale))
+      if (!Number.isNaN(angle)) {
+        if (angle < -Math.PI / 4) angle = -Math.PI / 4
+        else if (angle > Math.PI / 4) angle = Math.PI / 4
+        sheepPropeller.angle = angle
+      }
+      sheepPropeller.active = pointer.down
+    }
   }
   const simulator = new Simulator({ simulations: [
     { simulate },
@@ -266,7 +283,7 @@ export default async function main () {
 
     const floorY = canvas.height / 2
     const shiftX = canvas.width / 2 - cameraX
-    const offset = new Vector2(shiftX, floorY)
+    offset = new Vector2(shiftX, floorY)
     tile({ // BACKGROUND
       image: images.warehouseWall,
       canvas,
@@ -335,8 +352,18 @@ export default async function main () {
     })
     if (combatMode) {
       sheepPropeller.position.set({ x: direction === 'left' ? x + 5 : x - 5 })
-      sheepPropeller.draw({ canvas, scale, offset })
-      guardPropeller.draw({ canvas, scale, offset })
+      sheepPropeller.draw({
+        canvas,
+        scale,
+        offset,
+        frame: sheepPropeller.active ? sheepPropeller.spritesheet.frame : 0
+      })
+      guardPropeller.draw({
+        canvas,
+        scale,
+        offset,
+        frame: guardPropeller.timeSinceLastShot(simulator.simulatedTime) < 0.05 ? 1 : 0
+      })
     }
     guard.draw({ // GUARD
       canvas,

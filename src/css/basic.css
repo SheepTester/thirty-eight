@@ -37,6 +37,10 @@ a {
   image-rendering: pixelated;
 }
 
+.pointer-target {
+  touch-action: none;
+}
+
 :disabled {
   opacity: 0.5;
 }

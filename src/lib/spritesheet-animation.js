@@ -34,7 +34,7 @@ export class SpritesheetAnimation {
       context.drawImage(
         this.image,
         0,
-        this.frame * this.height,
+        frame * this.height,
         this.width,
         this.height,
         x,

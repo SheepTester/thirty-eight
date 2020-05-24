@@ -63,6 +63,10 @@ class Propeller {
     c.restore()
     return this
   }
+
+  timeSinceLastShot (time) {
+    return time - this._lastShot
+  }
 }
 
 const PARTICLE_SIZE = 2

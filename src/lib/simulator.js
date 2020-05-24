@@ -12,7 +12,7 @@ export class Simulator {
     this.stepTime = stepTime
 
     this._totalTime = 0
-    this._simulatedTime = 0
+    this.simulatedTime = 0
     this._lastTime = 0
   }
 
@@ -25,10 +25,10 @@ export class Simulator {
       this._totalTime += elapsedTime
 
       const stepTime = this.stepTime || elapsedTime
-      while (this._simulatedTime < this._totalTime) {
-        this._simulatedTime += stepTime
+      while (this.simulatedTime < this._totalTime) {
+        this.simulatedTime += stepTime
         for (const simulation of this.simulations) {
-          simulation.simulate(stepTime, this._simulatedTime)
+          simulation.simulate(stepTime, this.simulatedTime)
         }
       }
     }
