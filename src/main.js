@@ -27,10 +27,12 @@ export default async function main () {
   const dialogue = new Dialogue()
 
   let dialoguing = false
+  let currentSpeaker = null
   async function dialogueInteraction (lines) {
     dialoguing = true
     dialogue.addTo(document.body)
     for (const [speakerID, line] of lines) {
+      currentSpeaker = speakerID
       const speakingDone = dialogue.setSpeaker(speakers[speakerID])
         .speak(line)
       dialogue.resize()
@@ -38,6 +40,7 @@ export default async function main () {
     }
     dialogue.remove()
     dialoguing = false
+    currentSpeaker = null
   }
 
   const canvas = new CanvasWrapper().addTo(document.body)
@@ -77,7 +80,7 @@ export default async function main () {
   dialogueInteraction([['sheep', dialogueSrc.intro]])
 
   const minX = -500
-  const maxX = 500
+  const maxX = 600
 
   function targetHit ({ data: { affects: healthBar } }, { data: { damage } }) {
     healthBar.damage(damage)
@@ -113,7 +116,7 @@ export default async function main () {
     // Assumes that speed has no y component lol
     const { position, source } = sheepPropeller
     const positionToMouse = mouse.clone().sub(position)
-    return positionToMouse.angle + Math.acos(source.y / positionToMouse.length)
+    return Math.acos(source.y / positionToMouse.length) + positionToMouse.angle - Math.PI / 2
   }
 
   const guard = new SpritesheetAnimation({ image: images.guard, fps: FPS, frames: 3 })
@@ -140,9 +143,9 @@ export default async function main () {
     Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
     Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign }),
     Box.fromDimensions({ x: 200, width: images.warningSign.width }, { say: dialogueSrc.milkSpotted, auto: true }),
-    Box.fromDimensions({ x: maxX - 100, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
-    Box.fromDimensions({ x: maxX - 80, width: 100 }, { say: dialogueSrc.goAway, auto: true }),
-    Box.fromDimensions({ x: maxX - 60, width: 100 }, {
+    Box.fromDimensions({ x: maxX - 180, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
+    Box.fromDimensions({ x: maxX - 130, width: 100 }, { say: dialogueSrc.goAway, auto: true }),
+    Box.fromDimensions({ x: maxX - 80, width: 100 }, {
       combat () {
         guardPropeller.active = true
       },
@@ -277,7 +280,8 @@ export default async function main () {
     } else if (walking) {
       walking = false
     }
-    cameraX += (x * scale - cameraX) * 0.1 // Assumes constant step time
+    const focusX = currentSpeaker === 'guard' ? maxX : x
+    cameraX += (focusX * scale - cameraX) * 0.1 // Assumes constant step time
     if (combatMode) {
       if (sheepHealth.isDead() || guardHealth.isDead()) {
         setCombatMode(false)
