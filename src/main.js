@@ -67,7 +67,8 @@ export default async function main () {
       guardProfile: './assets/guard-profile.png',
       sheepPropeller: './assets/expeller.png',
       guardPropeller: './assets/particle-propeller.png',
-      cloud: './assets/cloud.png'
+      cloud: './assets/cloud.png',
+      milk: './assets/milk.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
@@ -144,7 +145,8 @@ export default async function main () {
     height: -sheepStill.height
   })
   const interactables = new Set([
-    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
+    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { end: true }),
+    // Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
     Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign }),
     Box.fromDimensions({ x: 200, width: images.warningSign.width }, { say: dialogueSrc.milkSpotted, auto: true }),
     Box.fromDimensions({ x: maxX - 180, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
@@ -225,7 +227,7 @@ export default async function main () {
         }
       }
       if (selectedBox && (keys.has('Enter') && !wasPressingEnter || selectedBox.data.auto)) {
-        const { auto, say, combat } = selectedBox.data
+        const { auto, say, combat, end } = selectedBox.data
         if (auto) {
           interactables.delete(selectedBox)
         }
@@ -235,6 +237,12 @@ export default async function main () {
         if (combat) {
           setCombatMode(true)
           combat()
+        }
+        if (end) {
+          if (animator.animating) {
+            animator.stop()
+            startEndAnimation()
+          }
         }
         wasPressingEnter = true
       } else if (wasPressingEnter && !keys.has('Enter')) {
@@ -426,7 +434,7 @@ export default async function main () {
         canvas.context.globalAlpha = 1
       } else {
         animator.stop()
-        document.body.classList.add('show-death')
+        document.body.classList.add('show-death', 'hide-canvas')
       }
     } else {
       if (combatMode) {
@@ -536,4 +544,58 @@ export default async function main () {
       canvas.context.stroke()
     }
   }).start()
+
+  function startEndAnimation () {
+    const c = canvas.context
+    const size = { curr: 0, vel: 0, end: 1 }
+    const rotate = { curr: Math.PI / 2, vel: 0, end: 0 }
+    let opacity = 1
+    const simulator = new Simulator({
+      simulations: [{
+        simulate (_, totalTime) {
+          size.vel = (size.end - size.curr) * 0.03 + size.vel * 0.95
+          size.curr += size.vel
+          rotate.vel = (rotate.end - rotate.curr) * 0.01 + rotate.vel * 0.95
+          rotate.curr += rotate.vel
+
+          if (goAway === null) {
+            if (Math.abs(size.vel) < 0.000001 && Math.abs(size.end - size.curr) < 0.01) {
+              goAway = totalTime
+            }
+          } else {
+            opacity = Math.max(1 - ((totalTime - goAway) / 1) ** 3, 0)
+          }
+        }
+      }],
+      stepTime: 0.01
+    })
+    let goAway = null
+    const animator = new Animator(() => {
+      simulator.simulate()
+
+      c.fillStyle = 'white'
+      c.fillRect(0, 0, canvas.width, canvas.height)
+      c.imageSmoothingEnabled = false
+
+      c.save()
+      c.globalAlpha = opacity
+      c.translate(canvas.width / 2, canvas.height / 2)
+      c.rotate(rotate.curr)
+      const actualSize = size.curr * Math.min(canvas.width, canvas.height) / Math.max(images.milk.width, images.milk.height) / 2
+      c.drawImage(
+        images.milk,
+        -images.milk.width * actualSize / 2,
+        -images.milk.height * actualSize / 2,
+        images.milk.width * actualSize,
+        images.milk.height * actualSize
+      )
+      c.restore()
+
+      if (opacity === 0) {
+        animator.stop()
+        document.body.classList.add('show-end', 'hide-canvas')
+      }
+    })
+      .start()
+  }
 }

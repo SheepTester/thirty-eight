@@ -5,7 +5,13 @@
 body {
   background-color: black;
 }
-.death-wrapper {
+.hide-canvas .wrapped-canvas {
+  filter: grayscale(1);
+  opacity: 0;
+  transition: all 2s;
+}
+.wrapper {
+  display: none;
   opacity: 0;
   position: fixed;
   top: 0;
@@ -18,12 +24,8 @@ body {
   flex-direction: column;
   z-index: 1;
 }
-.show-death .wrapped-canvas {
-  filter: grayscale(1);
-  opacity: 0;
-  transition: all 2s;
-}
-.show-death .death-wrapper {
+.show-death .death-wrapper,
+.show-end .end-wrapper {
   display: flex;
   opacity: 1;
   transition: all 2s;
@@ -31,12 +33,12 @@ body {
 .heading {
   font-weight: normal;
 }
-.try-again {
+.btn {
   border: 1px solid white;
   padding: 5px 10px;
   transition: all .2s;
 }
-.try-again:hover {
+.btn:hover {
   background-color: white;
   color: black;
 }
