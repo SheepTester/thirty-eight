@@ -1,3 +1,42 @@
 @import url('./css/basic.css');
 @import url('./css/canvas.css');
 @import url('./css/dialogue.css');
+
+body {
+  background-color: black;
+}
+.death-wrapper {
+  opacity: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  flex-direction: column;
+  z-index: 1;
+}
+.show-death .wrapped-canvas {
+  filter: grayscale(1);
+  opacity: 0;
+  transition: all 2s;
+}
+.show-death .death-wrapper {
+  display: flex;
+  opacity: 1;
+  transition: all 2s;
+}
+.heading {
+  font-weight: normal;
+}
+.try-again {
+  border: 1px solid white;
+  padding: 5px 10px;
+  transition: all .2s;
+}
+.try-again:hover {
+  background-color: white;
+  color: black;
+}

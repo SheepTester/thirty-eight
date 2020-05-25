@@ -66,7 +66,8 @@ export default async function main () {
       sheepProfile: './assets/happy.png',
       guardProfile: './assets/guard-profile.png',
       sheepPropeller: './assets/expeller.png',
-      guardPropeller: './assets/particle-propeller.png'
+      guardPropeller: './assets/particle-propeller.png',
+      cloud: './assets/cloud.png'
     }, import.meta.url),
     fetch(new URL('./dialogue/test.json', import.meta.url))
       .then(r => r.json()),
@@ -111,6 +112,9 @@ export default async function main () {
   sheepPropeller.offset.set(new Vector2(-sheepPropeller.spritesheet.width / 2, -sheepPropeller.spritesheet.height).add(sheepUglyOffset))
   sheepPropeller.source.set(new Vector2(sheepPropeller.spritesheet.width / 2 - 20, -sheepPropeller.spritesheet.height / 2 - 5).add(sheepUglyOffset))
   const sheepHealth = new HealthBar(10)
+
+  const cloud = new SpritesheetAnimation({ image: images.cloud, fps: FPS, frames: 3 })
+  const dead = { sheep: false, guard: false }
 
   function getGoodAngle (mouse) {
     // Assumes that speed has no y component lol
@@ -186,9 +190,15 @@ export default async function main () {
 
   let wasPressingArrowUp = false
   let wasPressingEnter = false
+  function simulateDead (deadObj, elapsedTime) {
+    if (deadObj.opacity > 0) {
+      deadObj.opacity -= elapsedTime * 0.3
+      if (deadObj.opacity < 0) deadObj.opacity = 0
+    }
+  }
   function simulate (elapsedTime, totalTime) {
     const sheep = sheepBox.clone().offset({ x })
-    if (!dialoguing) {
+    if (!dialoguing && !dead.sheep) {
       let selectedBox
       for (const interactable of interactables) {
         if (interactable.intersects(sheep)) {
@@ -251,7 +261,7 @@ export default async function main () {
         wasPressingEnter = false
       }
     }
-    if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialoguing) {
+    if (keys.has('ArrowLeft') !== keys.has('ArrowRight') && !dialoguing && !dead.sheep) {
       if (!walking) {
         walking = true
         direction = null
@@ -287,6 +297,9 @@ export default async function main () {
         setCombatMode(false)
         sheepPropeller.active = false
         guardPropeller.active = false
+        if (sheepHealth.isDead()) dead.sheep = { opacity: 1 }
+        if (guardHealth.isDead()) dead.guard = { opacity: 1 }
+        interactables.add(Box.fromRadius({ x: maxX, width: sheepStill.width / 2 }, { end: true }))
       }
     }
     if (combatMode) {
@@ -302,6 +315,8 @@ export default async function main () {
         guardPropeller.angle = Math.sin(totalTime * 5) * Math.PI / 6
       }
     }
+    if (dead.sheep) simulateDead(dead.sheep, elapsedTime)
+    if (dead.guard) simulateDead(dead.guard, elapsedTime)
   }
   const simulator = new Simulator({ simulations: [
     { simulate },
@@ -309,9 +324,12 @@ export default async function main () {
     guard,
     particleManager,
     sheepPropeller.spritesheet,
-    // guardPropeller.spritesheet
+    cloud
   ], stepTime: 0.01 })
   const drawer = new PropDrawer({ canvas, scale })
+  function drawCloud ({ opacity }, { x, y }) {
+    cloud.draw({ canvas, x: x - cloud.width / 2 * scale, y: y - (cloud.height + (1 - opacity) * 100) * scale, scale })
+  }
   const animator = new Animator(() => {
     simulator.simulate()
     canvas.context.clearRect(0, 0, canvas.width, canvas.height)
@@ -386,71 +404,90 @@ export default async function main () {
       x: 40 * scale + shiftX,
       y: floorY - (images.warningSign.height + 15.5) * scale
     })
-    guard.draw({ // GUARD
-      canvas,
-      x: (maxX - guard.width / 2) * scale + shiftX,
-      y: floorY - guard.height * scale,
-      scale
-    })
-    if (combatMode) {
-      sheepPropeller.position.set({ x: direction === 'left' ? x + 5 : x - 5 })
-      sheepPropeller.draw({
-        canvas,
-        scale,
-        offset,
-        frame: sheepPropeller.active ? sheepPropeller.spritesheet.frame : 0
-      })
-      guardPropeller.draw({
-        canvas,
-        scale,
-        offset,
-        frame: guardPropeller.timeSinceLastShot(simulator.simulatedTime) < 0.05 ? 1 : 0
-      })
-    }
-    guardHealth.draw({ canvas, x: maxX * scale + shiftX, y: floorY - 150 })
-    sheepHealth.draw({ canvas, x: x * scale + shiftX, y: floorY - 150 })
-    if (walking) { // SHEEP
-      if (direction === 'left') {
-        canvas.context.save()
-        canvas.context.scale(-1, 1)
-        sheepWalk.draw({
-          canvas,
-          x: -(visualX + sheepStill.width / 2) * scale - shiftX,
-          y: floorY - sheepWalk.height * scale,
-          scale,
-          alwaysDraw: true
-        })
-        canvas.context.restore()
-      } else {
-        sheepWalk.draw({
-          canvas,
-          x: (visualX - sheepStill.width / 2) * scale + shiftX,
-          y: floorY - sheepWalk.height * scale,
-          scale,
-          alwaysDraw: true
-        })
+    if (dead.guard) {
+      if (dead.guard.opacity > 0) {
+        canvas.context.globalAlpha = dead.guard.opacity
+        drawCloud(dead.guard, { x: maxX * scale + shiftX, y: floorY })
+        canvas.context.globalAlpha = 1
       }
     } else {
-      if (direction === 'left') {
-        canvas.context.save()
-        canvas.context.scale(-1, 1)
-        sheepStill.draw({
-          canvas,
-          x: -(x + sheepStill.width / 2) * scale - shiftX,
-          y: floorY - sheepStill.height * scale,
-          scale,
-          alwaysDraw: true
-        })
-        canvas.context.restore()
+      guard.draw({ // GUARD
+        canvas,
+        x: (maxX - guard.width / 2) * scale + shiftX,
+        y: floorY - guard.height * scale,
+        scale
+      })
+      guardHealth.draw({ canvas, x: maxX * scale + shiftX, y: floorY - 150 })
+    }
+    if (dead.sheep) {
+      if (dead.sheep.opacity > 0) {
+        canvas.context.globalAlpha = dead.sheep.opacity
+        drawCloud(dead.sheep, { x: x * scale + shiftX, y: floorY })
+        canvas.context.globalAlpha = 1
       } else {
-        sheepStill.draw({
+        animator.stop()
+        document.body.classList.add('show-death')
+      }
+    } else {
+      if (combatMode) {
+        sheepPropeller.position.set({ x: direction === 'left' ? x + 5 : x - 5 })
+        sheepPropeller.draw({
           canvas,
-          x: (x - sheepStill.width / 2) * scale + shiftX,
-          y: floorY - sheepStill.height * scale,
           scale,
-          alwaysDraw: true
+          offset,
+          frame: sheepPropeller.active ? sheepPropeller.spritesheet.frame : 0
+        })
+        guardPropeller.draw({
+          canvas,
+          scale,
+          offset,
+          frame: guardPropeller.timeSinceLastShot(simulator.simulatedTime) < 0.05 ? 1 : 0
         })
       }
+      if (walking) { // SHEEP
+        if (direction === 'left') {
+          canvas.context.save()
+          canvas.context.scale(-1, 1)
+          sheepWalk.draw({
+            canvas,
+            x: -(visualX + sheepStill.width / 2) * scale - shiftX,
+            y: floorY - sheepWalk.height * scale,
+            scale,
+            alwaysDraw: true
+          })
+          canvas.context.restore()
+        } else {
+          sheepWalk.draw({
+            canvas,
+            x: (visualX - sheepStill.width / 2) * scale + shiftX,
+            y: floorY - sheepWalk.height * scale,
+            scale,
+            alwaysDraw: true
+          })
+        }
+      } else {
+        if (direction === 'left') {
+          canvas.context.save()
+          canvas.context.scale(-1, 1)
+          sheepStill.draw({
+            canvas,
+            x: -(x + sheepStill.width / 2) * scale - shiftX,
+            y: floorY - sheepStill.height * scale,
+            scale,
+            alwaysDraw: true
+          })
+          canvas.context.restore()
+        } else {
+          sheepStill.draw({
+            canvas,
+            x: (x - sheepStill.width / 2) * scale + shiftX,
+            y: floorY - sheepStill.height * scale,
+            scale,
+            alwaysDraw: true
+          })
+        }
+      }
+      sheepHealth.draw({ canvas, x: x * scale + shiftX, y: floorY - 150 })
     }
     particleManager.draw({ canvas, scale, offset })
     tile({ // WALKWAY
