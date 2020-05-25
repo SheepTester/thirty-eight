@@ -149,8 +149,7 @@ export default async function main () {
     height: -sheepStill.height
   })
   const interactables = new Set([
-    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { end: true }),
-    // Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
+    Box.fromDimensions({ x: minX - sheepStill.width / 2, width: 30 }, { say: dialogueSrc.startDoor }),
     Box.fromDimensions({ x: 40, width: images.warningSign.width }, { say: dialogueSrc.warningSign }),
     Box.fromDimensions({ x: 200, width: images.warningSign.width }, { say: dialogueSrc.milkSpotted, auto: true }),
     Box.fromDimensions({ x: maxX - 180, width: 100 }, { say: dialogueSrc.guardInteraction, auto: true }),
