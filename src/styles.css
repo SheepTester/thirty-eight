@@ -1,6 +1,7 @@
 @import url('./css/basic.css');
 @import url('./css/canvas.css');
 @import url('./css/dialogue.css');
+@import url('./css/hint.css');
 
 body {
   background-color: black;

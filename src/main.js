@@ -12,6 +12,7 @@ import { Vector2 } from './lib/vector2.js'
 import { ParticleManager } from './lib/particle-manager.js'
 import { SinglePointer } from './lib/pointer.js'
 import { HealthBar } from './lib/health-bar.js'
+import { showHint } from './lib/hint.js'
 
 const FPS = 6
 const PX_PER_WALK_CYCLE = 18
@@ -80,6 +81,9 @@ export default async function main () {
     guard: { image: images.guardProfile, name: 'Guard' }
   }
   dialogueInteraction([['sheep', dialogueSrc.intro]])
+    .then(() => {
+      showHint('Use arrow keys to move.')
+    })
 
   const minX = -500
   const maxX = 600
@@ -237,6 +241,7 @@ export default async function main () {
         if (combat) {
           setCombatMode(true)
           combat()
+          showHint('Point and press to propel particles of peril.')
         }
         if (end) {
           if (animator.animating) {
